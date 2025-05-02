@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/models/auth_model.dart';
 import '../services/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
@@ -21,11 +22,15 @@ class _LoginPageState extends State<LoginPage> {
         _passwordController.text,
       );
 
-      final role = await _authService.getUserRole();
+      final user = await _authService.getUserRole();
 
-      if (role == 'admin') {
+      if (user == null) return;
+      AuthModel? customUser = await _authService.getUserRole();
+      print(customUser?.roles[0].role);
+
+      if (user.roles.any((role) => role.role == 'admin')) {
         Navigator.pushReplacementNamed(context, '/admin-dashboard');
-      } else if (role == 'employer') {
+      } else if (user.roles.any((role) => role.role == 'employer')) {
         Navigator.pushReplacementNamed(context, '/employer-dashboard');
       } else {
         Navigator.pushReplacementNamed(context, '/assistant-dashboard');

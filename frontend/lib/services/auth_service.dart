@@ -1,26 +1,34 @@
+import 'package:frontend/models/auth_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthService {
   final SupabaseClient client = Supabase.instance.client;
 
   Future<AuthResponse> signIn(String email, String password) async {
-    return await client.auth.signInWithPassword(email: email, password: password);
+    return await client.auth
+        .signInWithPassword(email: email, password: password);
   }
 
   Future<AuthResponse> signUp(String email, String password) async {
     return await client.auth.signUp(email: email, password: password);
   }
 
-  Future<String?> getUserRole() async {
+  Future<AuthModel?> getUserRole() async {
+    print("trying to get extra fields for user ");
     final user = client.auth.currentUser;
+
+    print("getting user current ${user!.email}");
+
     if (user == null) return null;
 
     final response = await client
-        .from('profiles')
-        .select('role')
-        .eq('user_id', user.id)
+        .from('users')
+        .select('*, roles:user_roles(*,app_role(*))')
+        .eq('id', user.id)
         .single();
-  
-    return response['role'] as String?;
+    print("getting response ${response}");
+    return AuthModel.fromMap(
+      response,
+    );
   }
 }
