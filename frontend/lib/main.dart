@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/uttils/navigator.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'pages/login_page.dart';
 import 'pages/register_page.dart';
@@ -24,6 +25,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Gestion RH',
       debugShowCheckedModeBanner: false,
+      navigatorKey: AppNavigator.globalKey,
       initialRoute: '/login',
       routes: {
         '/login': (_) => const LoginPage(),
@@ -35,3 +37,4 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+

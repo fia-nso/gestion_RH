@@ -4,7 +4,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class AuthService {
   final SupabaseClient client = Supabase.instance.client;
 
-  Future<AuthResponse> signIn({required String email, required String password}) async {
+  Future<AuthResponse> signIn(
+      {required String email, required String password}) async {
     return await client.auth
         .signInWithPassword(email: email, password: password);
   }
@@ -13,9 +14,13 @@ class AuthService {
     return await client.auth.signUp(email: email, password: password);
   }
 
-  Future<AuthModel?> getUserRole() async {
+  Future<AuthModel?> getUser() async {
     print("trying to get extra fields for user ");
     final user = client.auth.currentUser;
+
+    final role = user?.userMetadata?['role'];
+
+    print('Rôle : $role');
 
     print("getting user current ${user!.email}");
 

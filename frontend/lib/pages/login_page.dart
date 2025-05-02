@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/uttils/navigator.dart';
 import '../services/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
@@ -12,7 +13,7 @@ class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final AuthService _authService = AuthService();
-  bool _passwordVisible = false ;
+  bool _passwordVisible = false;
   String? _error;
 
   Future<void> _login() async {
@@ -22,16 +23,16 @@ class _LoginPageState extends State<LoginPage> {
         password: _passwordController.text,
       );
 
-      final user = await _authService.getUserRole();
+      final user = await _authService.getUser();
 
       if (user == null) return;
 
       if (user.roles.any((role) => role.role == 'admin')) {
-        Navigator.pushReplacementNamed(context, '/admin-dashboard');
+        AppNavigator.push('/admin-dashboard');
       } else if (user.roles.any((role) => role.role == 'employer')) {
-        Navigator.pushReplacementNamed(context, '/employer-dashboard');
+        AppNavigator.push('/employer-dashboard');
       } else {
-        Navigator.pushReplacementNamed(context, '/assistant-dashboard');
+        AppNavigator.push('/assistant-dashboard');
       }
     } catch (e) {
       setState(() {
@@ -95,16 +96,18 @@ class _LoginPageState extends State<LoginPage> {
                       size: 18,
                     ),
                     suffixIcon: IconButton(
-              icon: Icon(
-                _passwordVisible ? Icons.visibility : Icons.visibility_off,
-                color: const Color.fromARGB(224, 253, 192, 39),
-              ),
-              onPressed: () {
-                setState(() {
-                  _passwordVisible = !_passwordVisible;
-                });
-              },
-            ),
+                      icon: Icon(
+                        _passwordVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                        color: const Color.fromARGB(224, 253, 192, 39),
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _passwordVisible = !_passwordVisible;
+                        });
+                      },
+                    ),
                     enabledBorder: OutlineInputBorder(
                       borderSide:
                           const BorderSide(color: Colors.grey, width: 1),
@@ -142,4 +145,5 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
+
 
