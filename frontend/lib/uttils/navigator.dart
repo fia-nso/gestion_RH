@@ -5,4 +5,6 @@ class AppNavigator {
 
   static push(String url) =>
       Navigator.pushReplacementNamed(globalKey.currentState!.context, url);
+  static pushReplacement(String url) =>
+      Navigator.pushReplacementNamed(globalKey.currentState!.context, url);
 }

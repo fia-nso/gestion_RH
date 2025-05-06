@@ -27,17 +27,14 @@ class AuthModel {
 
 class UserRole {
   final String id;
-  final String role;
 
   UserRole({
     required this.id,
-    required this.role,
   });
 
   factory UserRole.fromMap(Map<String, dynamic> map) {
     return UserRole(
       id: map['id'] as String,
-      role: map['role'] as String,
     );
   }
 }

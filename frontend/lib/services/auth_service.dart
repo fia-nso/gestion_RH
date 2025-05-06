@@ -6,8 +6,10 @@ class AuthService {
 
   Future<AuthResponse> signIn(
       {required String email, required String password}) async {
-    return await client.auth
-        .signInWithPassword(email: email, password: password);
+    AuthResponse auth;
+    auth =
+        await client.auth.signInWithPassword(email: email, password: password);
+    return auth;
   }
 
   Future<AuthResponse> signUp(String email, String password) async {
@@ -18,9 +20,9 @@ class AuthService {
     print("trying to get extra fields for user ");
     final user = client.auth.currentUser;
 
-    final role = user?.userMetadata?['role'];
+    final roles = user?.userMetadata?['roles'];
 
-    print('Rôle : $role');
+    print('Rôle : $roles');
 
     print("getting user current ${user!.email}");
 
@@ -36,4 +38,10 @@ class AuthService {
       response,
     );
   }
+  // Future<void> resendConfirmationEmail(String email) async {
+  //   await client.auth.resend(
+  //     type: OtpType.signup,
+  //     email: email,
+  //   );
+  // }
 }

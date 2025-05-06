@@ -1,5 +1,8 @@
+// import 'dart:convert';
+// import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:frontend/uttils/navigator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
@@ -16,29 +19,126 @@ class _LoginPageState extends State<LoginPage> {
   bool _passwordVisible = false;
   String? _error;
 
+  @override
+  void initState() {
+    super.initState();
+    _checkLoginStatus(); // Check if user is already logged in
+  }
+
+  // Check if user is already logged in
+  Future<void> _checkLoginStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+    final userRole = prefs.getString('userRole');
+
+    if (isLoggedIn && userRole != null) {
+      // Navigate to appropriate dashboard based on role
+      if (userRole == 'admin') {
+        AppNavigator.pushReplacement('/admin-dashboard');
+      } else if (userRole == 'employer') {
+        AppNavigator.pushReplacement('/employer-dashboard');
+      } else {
+        AppNavigator.pushReplacement('/assistant-dashboard');
+      }
+    }
+  }
+
   Future<void> _login() async {
+    setState(() {
+      _error = null;
+    });
+
     try {
-      await _authService.signIn(
-        email: _emailController.text,
+      final authResponse = await _authService.signIn(
+        email: _emailController.text.trim(),
         password: _passwordController.text,
       );
 
+      print('AuthResponse data: ${authResponse.user}');
+
+      if (authResponse.user == null) {
+        setState(() {
+          _error = 'Échec de la connexion : utilisateur non trouvé.';
+        });
+        return;
+      }
+
       final user = await _authService.getUser();
 
-      if (user == null) return;
-
-      if (user.roles.any((role) => role.role == 'admin')) {
-        AppNavigator.push('/admin-dashboard');
-      } else if (user.roles.any((role) => role.role == 'employer')) {
-        AppNavigator.push('/employer-dashboard');
-      } else {
-        AppNavigator.push('/assistant-dashboard');
+      if (user == null) {
+        setState(() {
+          _error =
+              'Impossible de récupérer les informations de l\'utilisateur.';
+        });
+        return;
       }
+
+      // Save login state and role to SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('isLoggedIn', true);
+      String role = 'assistant'; // Default role
+      if (user.roles.any((role) => role.id == 'admin')) {
+        role = 'admin';
+        AppNavigator.pushReplacement('/admin-dashboard');
+      } else if (user.roles.any((role) => role.id == 'employer')) {
+        role = 'employer';
+        AppNavigator.pushReplacement('/employer-dashboard');
+      } else {
+        AppNavigator.pushReplacement('/assistant-dashboard');
+      }
+      await prefs.setString('userRole', role);
     } catch (e) {
       setState(() {
-        _error = e.toString();
+        if (e.toString().contains('Email not confirmed')) {
+          _error =
+              'Veuillez confirmer votre adresse e-mail pour vous connecter.';
+        } else if (e.toString().contains('Invalid login credentials')) {
+          _error = 'E-mail ou mot de passe incorrect.';
+        } else {
+          _error = 'Erreur de connexion : ${e.toString()}';
+        }
       });
     }
+  }
+
+  // Login and save user data
+  // Future<void> _login() async {
+  //   try {
+  //     await _authService.signIn(
+  //       email: _emailController.text,
+  //       password: _passwordController.text,
+  //     );
+
+  //     final user = await _authService.getUser();
+
+  //     if (user == null) return;
+
+  //     // Save login state and role to SharedPreferences
+  //     final prefs = await SharedPreferences.getInstance();
+  //     await prefs.setBool('isLoggedIn', true);
+  //     String role = 'assistant'; // Default role
+  //     if (user.roles.any((role) => role.role == 'admin')) {
+  //       role = 'admin';
+  //       AppNavigator.pushReplacement('/admin-dashboard');
+  //     } else if (user.roles.any((role) => role.role == 'employer')) {
+  //       role = 'employer';
+  //       AppNavigator.pushReplacement('/employer-dashboard');
+  //     } else {
+  //       AppNavigator.pushReplacement('/assistant-dashboard');
+  //     }
+  //     await prefs.setString('userRole', role);
+  //   } catch (e) {
+  //     setState(() {
+  //       _error = e.toString();
+  //     });
+  //   }
+  // }
+
+  // Optional: Logout function to clear SharedPreferences
+  Future<void> _logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear(); // Clear all preferences
+    AppNavigator.pushReplacement('/login'); // Navigate back to login
   }
 
   @override
@@ -50,7 +150,7 @@ class _LoginPageState extends State<LoginPage> {
           child: Column(
             children: [
               Image.asset("assets/images/img1.png"),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               TextField(
                 controller: _emailController,
                 decoration: InputDecoration(
@@ -144,6 +244,11 @@ class _LoginPageState extends State<LoginPage> {
       ),
     );
   }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 }
-
-
