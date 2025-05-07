@@ -101,39 +101,7 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  // Login and save user data
-  // Future<void> _login() async {
-  //   try {
-  //     await _authService.signIn(
-  //       email: _emailController.text,
-  //       password: _passwordController.text,
-  //     );
-
-  //     final user = await _authService.getUser();
-
-  //     if (user == null) return;
-
-  //     // Save login state and role to SharedPreferences
-  //     final prefs = await SharedPreferences.getInstance();
-  //     await prefs.setBool('isLoggedIn', true);
-  //     String role = 'assistant'; // Default role
-  //     if (user.roles.any((role) => role.role == 'admin')) {
-  //       role = 'admin';
-  //       AppNavigator.pushReplacement('/admin-dashboard');
-  //     } else if (user.roles.any((role) => role.role == 'employer')) {
-  //       role = 'employer';
-  //       AppNavigator.pushReplacement('/employer-dashboard');
-  //     } else {
-  //       AppNavigator.pushReplacement('/assistant-dashboard');
-  //     }
-  //     await prefs.setString('userRole', role);
-  //   } catch (e) {
-  //     setState(() {
-  //       _error = e.toString();
-  //     });
-  //   }
-  // }
-
+  
   // Optional: Logout function to clear SharedPreferences
   Future<void> _logout() async {
     final prefs = await SharedPreferences.getInstance();
@@ -178,7 +146,7 @@ class _LoginPageState extends State<LoginPage> {
                     floatingLabelStyle:
                         const TextStyle(color: Colors.black, fontSize: 18)),
               ),
-              SizedBox(
+              const SizedBox(
                 height: 20,
               ),
               TextField(
@@ -226,7 +194,7 @@ class _LoginPageState extends State<LoginPage> {
               MaterialButton(
                 onPressed: _login,
                 height: 45,
-                color: Color.fromARGB(255, 232, 184, 26),
+                color: const Color.fromARGB(255, 232, 184, 26),
                 padding:
                     const EdgeInsets.symmetric(vertical: 10, horizontal: 50),
                 shape: RoundedRectangleBorder(

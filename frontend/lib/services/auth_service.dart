@@ -4,11 +4,15 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class AuthService {
   final SupabaseClient client = Supabase.instance.client;
 
-  Future<AuthResponse> signIn(
-      {required String email, required String password}) async {
+  Future<AuthResponse> signIn({
+    required String email,
+    required String password,
+  }) async {
     AuthResponse auth;
-    auth =
-        await client.auth.signInWithPassword(email: email, password: password);
+    auth = await client.auth.signInWithPassword(
+      email: email,
+      password: password,
+    );
     return auth;
   }
 
