@@ -1,0 +1,9 @@
+{
+    "bienvenue": "welcome",
+    "admin" : "Admin",
+    "assistant" : "Assistant",
+    "employer" : "Employer",
+    "email" : "Email",
+    "password" : "Password",
+     "se_connecter": "Signin"
+}

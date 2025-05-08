@@ -2,7 +2,10 @@
 // import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:frontend/uttils/navigator.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../controller_provider/locale_provider.dart';
+import '../l10n/generated/app_localizations.dart';
 import '../services/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
@@ -101,7 +104,6 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  
   // Optional: Logout function to clear SharedPreferences
   Future<void> _logout() async {
     final prefs = await SharedPreferences.getInstance();
@@ -113,6 +115,23 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
+        appBar: AppBar(
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.language),
+              onPressed: () {
+                final provider =
+                    Provider.of<LocaleProvider>(context, listen: false);
+                final currentLocale = provider.locale;
+                final newLocale = currentLocale.languageCode == 'en'
+                    ? const Locale('ar')
+                    : const Locale('en');
+                provider.changeLocale(newLocale);
+              },
+              tooltip: 'Change Language',
+            ),
+          ],
+        ),
         body: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -122,8 +141,8 @@ class _LoginPageState extends State<LoginPage> {
               TextField(
                 controller: _emailController,
                 decoration: InputDecoration(
-                    labelText: 'Email',
-                    hintText: 'Email',
+                    labelText: AppLocalizations.of(context)!.email,
+                    hintText: AppLocalizations.of(context)!.email,
                     labelStyle: const TextStyle(
                         color: Colors.black,
                         fontSize: 14,
@@ -152,8 +171,8 @@ class _LoginPageState extends State<LoginPage> {
               TextField(
                 controller: _passwordController,
                 decoration: InputDecoration(
-                    labelText: 'Password',
-                    hintText: 'Password',
+                    labelText: AppLocalizations.of(context)!.password,
+                    hintText: AppLocalizations.of(context)!.password,
                     labelStyle: const TextStyle(
                         color: Colors.black,
                         fontSize: 14,
@@ -199,7 +218,7 @@ class _LoginPageState extends State<LoginPage> {
                     const EdgeInsets.symmetric(vertical: 10, horizontal: 50),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10)),
-                child: const Text('Se connecter'),
+                child: Text(AppLocalizations.of(context)!.se_connecter),
               ),
               if (_error != null)
                 Text(

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:frontend/l10n/generated/app_localizations.dart';
 import 'package:frontend/uttils/navigator.dart';
+import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'controller_provider/locale_provider.dart';
 import 'pages/login_page.dart';
 import 'pages/register_page.dart';
 import 'pages/admin_dashboard.dart';
@@ -15,16 +19,35 @@ void main() async {
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvdXJyb2VzcmV1a2VvZmpqZm94Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU4NDM3NDYsImV4cCI6MjA2MTQxOTc0Nn0.fNhd8WJYAN3FLNcDVHCG8f7tVyMCSxsJuj5EkLK4ccw',
   );
 
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => LocaleProvider(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
   @override
   Widget build(BuildContext context) {
+    return Consumer<LocaleProvider>(
+      builder: (context, localeProvider, child) {
     return MaterialApp(
       title: 'Gestion RH',
       debugShowCheckedModeBanner: false,
+      // locale: const Locale('en'), // ou dynamique
+      supportedLocales: const [
+        Locale('en'),
+        Locale('ar'),
+      ],
+      locale: localeProvider.locale,
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
       navigatorKey: AppNavigator.globalKey,
       initialRoute: '/login',
       routes: {
@@ -35,6 +58,8 @@ class MyApp extends StatelessWidget {
         '/assistant-dashboard': (_) => const AssistantDashboard(),
       },
     );
+      }
+      );
   }
 }
 
