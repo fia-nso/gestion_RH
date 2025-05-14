@@ -1,6 +1,7 @@
 // import 'dart:convert';
 // import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
+import 'package:frontend/controller_provider/auth_provider.dart';
 import 'package:frontend/uttils/navigator.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -76,21 +77,7 @@ class _LoginPageState extends State<LoginPage> {
         return;
       }
 
-      // Save login state and role to SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('isLoggedIn', true);
-      
-      String role = 'assistant'; // Default role
-      if (user.roles.any((role) => role.id == 'admin')) {
-        role = 'admin';
-        AppNavigator.pushReplacement('/admin-dashboard');
-      } else if (user.roles.any((role) => role.id == 'employer')) {
-        role = 'employer';
-        AppNavigator.pushReplacement('/employer-dashboard');
-      } else {
-        AppNavigator.pushReplacement('/assistant-dashboard');
-      }
-      await prefs.setString('userRole', role);
+      AuthController().redirect();
     } catch (e) {
       setState(() {
         if (e.toString().contains('Email not confirmed')) {
