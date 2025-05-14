@@ -1,9 +1,28 @@
 {
-    "bienvenue": "مرحبا",
-    "admin" : "الرئيس",
-    "assistant" : "المساعد",
-    "employer" : "العامل",
-    "email" : "البريد",
-    "password" : "كلمة السر",
-    "se_connecter": "تسجيل لدخول"
+    
+  "bienvenue": "مرحبًا",
+  "admin": "الرئيس",
+  "email": "البريد الإلكتروني",
+  "password": "كلمة المرور",
+  "se_connecter": "تسجيل الدخول",
+  "employer": "صاحب العمل",
+  "change_language": "تغيير اللغة",
+  "full_name": "الاسم الكامل",
+  "phone": "الهاتف",
+  "add_employee": "إضافة موظف",
+  "edit_employee": "تعديل موظف",
+  "name_required": "الاسم مطلوب",
+  "email_required": "البريد الإلكتروني مطلوب",
+  "phone_required": "رقم الهاتف مطلوب",
+  "invalid_email": "أدخل بريدًا إلكترونيًا صالحًا",
+  "invalid_phone": "أدخل رقم هاتف صالح",
+  "select_photo": "اختر صورة",
+  "change_photo": "تغيير الصورة",
+  "delete": "حذف",
+  "cancel": "إلغاء",
+  "create": "إنشاء",
+  "update": "تحديث"
+
+
+    
 }

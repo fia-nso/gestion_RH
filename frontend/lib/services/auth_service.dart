@@ -1,47 +1,51 @@
 import 'package:frontend/models/auth_model.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:frontend/services/base_service.dart';
 
-class AuthService {
-  final SupabaseClient client = Supabase.instance.client;
+class EmployerService extends BaseService<Employer> {
+  Future<bool> updateUser({String? name}) async {
+    final user = client.auth.currentUser!;
 
-  Future<AuthResponse> signIn({
-    required String email,
-    required String password,
-  }) async {
-    AuthResponse auth;
-    auth = await client.auth.signInWithPassword(
-      email: email,
-      password: password,
-    );
-    return auth;
+    final userId = user.id;
+
+    try {
+      print('updating user');
+
+      if (name != null) {
+        await client
+            .from(AuthModel.usersTableName)
+            .update({"name": name}).eq('id', userId);
+      }
+
+      // await client
+      //     .from(Employer.tableName)
+      //     .update(value.toMap())
+      //     .eq('id', userId);
+
+      print('updated employer');
+      return true;
+    } catch (e) {
+      print("❌ updateUser() failed: $e");
+      return false;
+    }
   }
 
-  Future<AuthResponse> signUp(String email, String password) async {
-    return await client.auth.signUp(email: email, password: password);
+  @override
+  Future<Employer?> getUser() async {
+    try {
+      final user = client.auth.currentUser!;
+      final response = await client
+          .from('users')
+          .select('*, roles:user_roles(*,app_role(*))')
+          .eq('id', user.id)
+          .single();
+
+      return Employer.fromMap(response);
+    } catch (e) {
+      print("❌ getUser() failed: $e");
+      return null;
+    }
   }
 
-  Future<AuthModel?> getUser() async {
-    print("trying to get extra fields for user ");
-    final user = client.auth.currentUser;
-
-    final roles = user?.userMetadata?['roles'];
-
-    print('Rôle : $roles');
-
-    print("getting user current ${user!.email}");
-
-    if (user == null) return null;
-
-    final response = await client
-        .from('users')
-        .select('*, roles:user_roles(*,app_role(*))')
-        .eq('id', user.id)
-        .single();
-    print("getting response ${response}");
-    return AuthModel.fromMap(
-      response,
-    );
-  }
   // Future<void> resendConfirmationEmail(String email) async {
   //   await client.auth.resend(
   //     type: OtpType.signup,

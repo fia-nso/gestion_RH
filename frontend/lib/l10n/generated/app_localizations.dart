@@ -98,7 +98,7 @@ abstract class AppLocalizations {
   /// No description provided for @bienvenue.
   ///
   /// In en, this message translates to:
-  /// **'welcome'**
+  /// **'Welcome'**
   String get bienvenue;
 
   /// No description provided for @admin.
@@ -112,12 +112,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Assistant'**
   String get assistant;
-
-  /// No description provided for @employer.
-  ///
-  /// In en, this message translates to:
-  /// **'Employer'**
-  String get employer;
 
   /// No description provided for @email.
   ///
@@ -134,8 +128,110 @@ abstract class AppLocalizations {
   /// No description provided for @se_connecter.
   ///
   /// In en, this message translates to:
-  /// **'Signin'**
+  /// **'Log In'**
   String get se_connecter;
+
+  /// No description provided for @employer.
+  ///
+  /// In en, this message translates to:
+  /// **'Employer'**
+  String get employer;
+
+  /// No description provided for @change_language.
+  ///
+  /// In en, this message translates to:
+  /// **'Change Language'**
+  String get change_language;
+
+  /// No description provided for @full_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Full Name'**
+  String get full_name;
+
+  /// No description provided for @phone.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone'**
+  String get phone;
+
+  /// No description provided for @add_employee.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Employee'**
+  String get add_employee;
+
+  /// No description provided for @edit_employee.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Employee'**
+  String get edit_employee;
+
+  /// No description provided for @name_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Name is required'**
+  String get name_required;
+
+  /// No description provided for @email_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Email is required'**
+  String get email_required;
+
+  /// No description provided for @phone_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone is required'**
+  String get phone_required;
+
+  /// No description provided for @invalid_email.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid email'**
+  String get invalid_email;
+
+  /// No description provided for @invalid_phone.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid phone number'**
+  String get invalid_phone;
+
+  /// No description provided for @select_photo.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Photo'**
+  String get select_photo;
+
+  /// No description provided for @change_photo.
+  ///
+  /// In en, this message translates to:
+  /// **'Change Photo'**
+  String get change_photo;
+
+  /// No description provided for @delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get delete;
+
+  /// No description provided for @cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancel;
+
+  /// No description provided for @create.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get create;
+
+  /// No description provided for @update.
+  ///
+  /// In en, this message translates to:
+  /// **'Update'**
+  String get update;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

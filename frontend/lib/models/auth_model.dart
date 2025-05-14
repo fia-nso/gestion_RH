@@ -1,39 +1,85 @@
-class AuthModel {
+// ignore_for_file: public_member_api_docs, sort_constructors_first
+abstract class AuthModel {
   final String id;
-  final String email;
+  final List<AppRole> roles;
 
-  final String name;
-
-  final List<UserRole> roles;
+  AppRole get currentRole => roles[0];
 
   AuthModel({
     required this.id,
-    required this.email,
-    required this.name,
     required this.roles,
   });
 
-  factory AuthModel.fromMap(Map<String, dynamic> map) {
-    return AuthModel(
+  Map<String, dynamic> toMap();
+
+  AuthModel copyWith();
+
+  static String get usersTableName => "users";
+}
+
+class Employer extends AuthModel {
+  final String? name;
+  final String? contact;
+  final String? details;
+  final String? photo;
+
+  Employer({
+    required super.id,
+    required super.roles,
+    this.name,
+    this.contact,
+    this.details,
+    this.photo,
+  });
+
+  static String get tableName => "employer";
+
+  factory Employer.fromMap(Map<String, dynamic> map) {
+    return Employer(
       id: map['id'] as String,
-      email: map['email'] as String,
-      name: map['name'] as String,
-      roles: List<Map<String, dynamic>>.from(map['roles'])
-          .map((item) => UserRole.fromMap(item['app_role']))
+      name: map['name'] as String? ?? 'default',
+      contact: map['contact'] as String? ?? 'default',
+      details: map['details'] as String? ?? 'default',
+      photo: map['photo'] as String? ?? 'default',
+      roles: List<Map<String, dynamic>>.from(map['roles'] ?? [])
+          .map((item) => AppRole.fromMap(item['app_role']))
           .toList(),
+    );
+  }
+
+  @override
+  Map<String, dynamic> toMap() => {
+        'name': name,
+        "contact": contact,
+        "details": details,
+        "photo": photo,
+      };
+
+  @override
+  Employer copyWith({
+    String? name,
+    String? contact,
+    String? details,
+    String? photo,
+  }) {
+    return Employer(
+      id: id,
+      roles: roles,
+      name: name ?? this.name,
+      contact: contact ?? this.contact,
+      details: details ?? this.details,
+      photo: photo ?? this.photo,
     );
   }
 }
 
-class UserRole {
+class AppRole {
   final String id;
 
-  UserRole({
-    required this.id,
-  });
+  AppRole({required this.id});
 
-  factory UserRole.fromMap(Map<String, dynamic> map) {
-    return UserRole(
+  factory AppRole.fromMap(Map<String, dynamic> map) {
+    return AppRole(
       id: map['id'] as String,
     );
   }

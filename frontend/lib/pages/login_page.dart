@@ -18,7 +18,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final AuthService _authService = AuthService();
+  final EmployerService _authService = EmployerService();
   bool _passwordVisible = false;
   String? _error;
 
@@ -57,7 +57,7 @@ class _LoginPageState extends State<LoginPage> {
         password: _passwordController.text,
       );
 
-      print('AuthResponse data: ${authResponse.user}');
+      print('AuthResponse data: ${authResponse!.user}');
 
       if (authResponse.user == null) {
         setState(() {
@@ -79,6 +79,7 @@ class _LoginPageState extends State<LoginPage> {
       // Save login state and role to SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('isLoggedIn', true);
+      
       String role = 'assistant'; // Default role
       if (user.roles.any((role) => role.id == 'admin')) {
         role = 'admin';
