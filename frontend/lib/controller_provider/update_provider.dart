@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:frontend/controller_provider/auth_provider.dart';
 import 'package:frontend/services/auth_service.dart';
+import 'package:image_picker/image_picker.dart';
 
 class EmployerUpdateController extends ChangeNotifier {
   EmployerUpdateController() {
@@ -13,6 +16,7 @@ class EmployerUpdateController extends ChangeNotifier {
   final nameController = TextEditingController();
   final contactController = TextEditingController();
   final detailsController = TextEditingController();
+  XFile? photo;
 
   void init() {
     final employer = AuthController().emoloyer;
@@ -22,13 +26,27 @@ class EmployerUpdateController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> pickPhoto() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      photo = pickedFile;
+      notifyListeners();
+    }
+  }
+
   Future<void> save() async {
     loading = true;
     notifyListeners();
 
-    await EmployerService().updateUser(name: nameController.text.trim(),contact: contactController.text.trim(), details: detailsController.text.trim());
+    await EmployerService().updateUser(
+      name: nameController.text.trim(),
+      contact: contactController.text.trim(),
+      details: detailsController.text.trim(),
+      photo: photo,
+    );
 
-    await AuthController().getUser();   
+    await AuthController().getUser();
 
     loading = false;
     notifyListeners();

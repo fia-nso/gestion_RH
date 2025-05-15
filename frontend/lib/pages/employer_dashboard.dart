@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:frontend/controller_provider/update_provider.dart';
 import 'package:frontend/l10n/generated/app_localizations.dart';
@@ -58,6 +57,24 @@ class _EmployerDashboardBody extends StatelessWidget {
                           '${AppLocalizations.of(context)!.bienvenue}, ${authController.emoloyer.name ?? "👤"}',
                           style: Theme.of(context).textTheme.titleLarge,
                           textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 20),
+                        // Display profile photo
+                        CircleAvatar(
+                          radius: 50,
+                          backgroundImage: authController.emoloyer.photo != null
+                              ? NetworkImage(
+                                  authController.emoloyer.photo! as String)
+                              : null,
+                          child: authController.emoloyer.photo == null
+                              ? const Icon(Icons.person, size: 50)
+                              : null,
+                        ),
+                        const SizedBox(height: 10),
+                        TextButton(
+                          onPressed: controller.pickPhoto,
+                          child:
+                              Text(AppLocalizations.of(context)!.upload_photo),
                         ),
                         const SizedBox(height: 20),
                         TextField(
