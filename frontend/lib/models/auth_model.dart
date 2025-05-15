@@ -37,9 +37,9 @@ class Employer extends AuthModel {
   factory Employer.fromMap(Map<String, dynamic> map) {
     return Employer(
       id: map['id'] as String,
-      name: map['name'] as String? ?? 'default',
-      contact: map['contact'] as String? ?? 'default',
-      details: map['details'] as String? ?? 'default',
+      name: map['name'] as String? ?? '',
+      contact: map['employer']['contact'],
+      details: map['employer']['details'],
       photo: map['photo'] as String? ?? 'default',
       roles: List<Map<String, dynamic>>.from(map['roles'] ?? [])
           .map((item) => AppRole.fromMap(item['app_role']))

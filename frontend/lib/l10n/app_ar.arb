@@ -21,8 +21,12 @@
   "delete": "حذف",
   "cancel": "إلغاء",
   "create": "إنشاء",
-  "update": "تحديث"
+  "update": "تحديث",
+  "name": "الاسم",
+  "contact": "جهة الاتصال",
+  "upload_photo": "رفع الصورة",
+  "save": "حفظ"
+}
 
 
     
-}

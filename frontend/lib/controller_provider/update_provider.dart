@@ -11,9 +11,14 @@ class EmployerUpdateController extends ChangeNotifier {
   String? error;
 
   final nameController = TextEditingController();
+  final contactController = TextEditingController();
+  final detailsController = TextEditingController();
 
   void init() {
-    nameController.text = AuthController().emoloyer.name ?? '';
+    final employer = AuthController().emoloyer;
+    nameController.text = employer.name ?? '';
+    contactController.text = employer.contact ?? '';
+    detailsController.text = employer.details ?? '';
     notifyListeners();
   }
 
@@ -21,9 +26,9 @@ class EmployerUpdateController extends ChangeNotifier {
     loading = true;
     notifyListeners();
 
-    await EmployerService().updateUser(name: nameController.text.trim());
+    await EmployerService().updateUser(name: nameController.text.trim(),contact: contactController.text.trim(), details: detailsController.text.trim());
 
-    await AuthController().getUser();
+    await AuthController().getUser();   
 
     loading = false;
     notifyListeners();

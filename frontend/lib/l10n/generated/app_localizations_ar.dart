@@ -74,4 +74,16 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get update => 'تحديث';
+
+  @override
+  String get name => 'الاسم';
+
+  @override
+  String get contact => 'جهة الاتصال';
+
+  @override
+  String get upload_photo => 'رفع الصورة';
+
+  @override
+  String get save => 'حفظ';
 }

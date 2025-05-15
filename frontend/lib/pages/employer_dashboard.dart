@@ -1,11 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:frontend/controller_provider/auth_provider.dart';
-
 import 'package:frontend/controller_provider/update_provider.dart';
 import 'package:frontend/l10n/generated/app_localizations.dart';
-
 import 'package:provider/provider.dart';
-
+import '../controller_provider/auth_provider.dart';
 import '../controller_provider/locale_provider.dart';
 
 class EmployerDashboard extends StatelessWidget {
@@ -48,45 +46,70 @@ class _EmployerDashboardBody extends StatelessWidget {
       body: controller.loading
           ? const Center(child: CircularProgressIndicator())
           : controller.error != null
-              ? const Center(child: Text("❌ Failed to load user"))
-              : Builder(
-                  builder: (context) {
-                    final employer = authController.emoloyer;
-                    return Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            '${AppLocalizations.of(context)!.bienvenue}, ${employer.name ?? "👤"}',
-                            style: Theme.of(context).textTheme.titleLarge,
+              ? Center(child: Text(controller.error!))
+              : Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(
+                          '${AppLocalizations.of(context)!.bienvenue}, ${authController.emoloyer.name ?? "👤"}',
+                          style: Theme.of(context).textTheme.titleLarge,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 20),
+                        TextField(
+                          controller: controller.nameController,
+                          decoration: InputDecoration(
+                            labelText: AppLocalizations.of(context)!.name,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                           ),
-                          const SizedBox(height: 10),
-                          TextField(controller: controller.nameController),
-                          const SizedBox(height: 20),
-                          controller.loading
-                              ? const CircularProgressIndicator()
-                              : ElevatedButton(
-                                  onPressed: controller.save,
-                                  child: const Text('🖊 Test Update User'),
-                                ),
-                          // if (_updateMessage != null)
-                          //   Padding(
-                          //     padding: const EdgeInsets.only(top: 16.0),
-                          //     child: Text(
-                          //       _updateMessage!,
-                          //       style: TextStyle(
-                          //         color: _updateMessage!.contains('✅')
-                          //             ? Colors.green
-                          //             : Colors.red,
-                          //         fontWeight: FontWeight.bold,
-                          //       ),
-                          //     ),
-                          //   ),
-                        ],
-                      ),
-                    );
-                  },
+                        ),
+                        const SizedBox(height: 20),
+                        TextField(
+                          controller: controller.contactController,
+                          decoration: InputDecoration(
+                            labelText: AppLocalizations.of(context)!.contact,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        TextField(
+                          controller: controller.detailsController,
+                          decoration: InputDecoration(
+                            labelText: 'details',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        controller.loading
+                            ? const CircularProgressIndicator()
+                            : ElevatedButton(
+                                onPressed: controller.save,
+                                child: Text(AppLocalizations.of(context)!.save),
+                              ),
+                        if (controller.error != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 16.0),
+                            child: Text(
+                              controller.error!,
+                              style: const TextStyle(
+                                color: Colors.red,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
                 ),
     );
   }

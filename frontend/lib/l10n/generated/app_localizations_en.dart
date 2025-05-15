@@ -74,4 +74,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get update => 'Update';
+
+  @override
+  String get name => 'Name';
+
+  @override
+  String get contact => 'Contact';
+
+  @override
+  String get upload_photo => 'Upload Photo';
+
+  @override
+  String get save => 'Save';
 }
