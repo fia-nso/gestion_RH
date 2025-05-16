@@ -1,5 +1,5 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
-import 'dart:io';
+// import 'dart:io';
 
 abstract class AuthModel {
   final String id;
@@ -23,7 +23,7 @@ class Employer extends AuthModel {
   final String? name;
   final String? contact;
   final String? details;
-  final File? photo;
+  final String? photo;
 
   Employer({
     required super.id,
@@ -42,7 +42,7 @@ class Employer extends AuthModel {
       name: map['name'] as String? ?? '',
       contact: map['employer']['contact'],
       details: map['employer']['details'],
-      photo: map['photo'] as File?  ,
+      photo: map['employer']['photo'] as String?,
       roles: List<Map<String, dynamic>>.from(map['roles'] ?? [])
           .map((item) => AppRole.fromMap(item['app_role']))
           .toList(),
@@ -62,7 +62,7 @@ class Employer extends AuthModel {
     String? name,
     String? contact,
     String? details,
-    File? photo,
+    String? photo,
   }) {
     return Employer(
       id: id,

@@ -26,6 +26,7 @@ class _EmployerDashboardBody extends StatelessWidget {
     final controller = context.watch<EmployerUpdateController>();
     final authController = context.watch<AuthController>();
 
+    var photo2 = authController.emoloyer.photo;
     return Scaffold(
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)!.employer),
@@ -59,14 +60,23 @@ class _EmployerDashboardBody extends StatelessWidget {
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 20),
-                        // Display profile photo
+                        // Display profile photo with proper null checks
                         CircleAvatar(
                           radius: 50,
-                          backgroundImage: authController.emoloyer.photo != null
-                              ? NetworkImage(
-                                  authController.emoloyer.photo! as String)
+                          backgroundColor: Colors.grey[200],
+                          backgroundImage: photo2 != null &&
+                                  authController.emoloyer.photo!.isNotEmpty
+                              ? NetworkImage(authController.emoloyer.photo!)
                               : null,
-                          child: authController.emoloyer.photo == null
+                          onBackgroundImageError:
+                              authController.emoloyer.photo != null &&
+                                      authController.emoloyer.photo!.isNotEmpty
+                                  ? (exception, stackTrace) {
+                                      print('Image loading error: $exception');
+                                    }
+                                  : null,
+                          child: authController.emoloyer.photo == null ||
+                                  authController.emoloyer.photo!.isEmpty
                               ? const Icon(Icons.person, size: 50)
                               : null,
                         ),

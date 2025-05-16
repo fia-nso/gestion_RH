@@ -59,6 +59,7 @@ class EmployerService extends BaseService<Employer> {
               upsert: true,
               contentType: photo.mimeType,
             ));
+            print("photo uploaded to employer ");
       } else {
         final File file = File(photo.path);
         await client.storage.from('profile-pictures').upload(
@@ -67,11 +68,12 @@ class EmployerService extends BaseService<Employer> {
               fileOptions:
                   FileOptions(upsert: true, contentType: photo.mimeType),
             );
+            print("photo uploaded to employer ");
       }
 
       final publicUrl = client.storage.from('employees').getPublicUrl(path);
 
-      print('jello ${publicUrl}');
+      print('hello ${publicUrl}');
       return publicUrl;
     } catch (e) {
       print(" Photo upload failed: $e");
@@ -87,7 +89,7 @@ class EmployerService extends BaseService<Employer> {
       final response = await client
           .from('users')
           .select(
-              'id, name, employer(contact, details), roles:user_roles(*, app_role(*))')
+              'id, name, employer(contact, details, photo), roles:user_roles(*, app_role(*))')
           .eq('id', user.id)
           .single();
 

@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:frontend/controller_provider/auth_provider.dart';
 import 'package:frontend/services/auth_service.dart';
@@ -37,16 +35,27 @@ class EmployerUpdateController extends ChangeNotifier {
 
   Future<void> save() async {
     loading = true;
+    error = null;
     notifyListeners();
 
-    await EmployerService().updateUser(
-      name: nameController.text.trim(),
-      contact: contactController.text.trim(),
-      details: detailsController.text.trim(),
-      photo: photo,
-    );
+    try {
+      final success = await EmployerService().updateUser(
+        name: nameController.text.trim(),
+        contact: contactController.text.trim(),
+        details: detailsController.text.trim(),
+        photo: photo,
+      );
 
-    await AuthController().getUser();
+      if (success) {
+        // Refresh the AuthController to update the employer data
+        await AuthController().getUser();
+      } else {
+        error = 'Failed to update profile';
+      }
+    } catch (e) {
+      error = 'Error updating profile: $e';
+      print('Save error: $e');
+    }
 
     loading = false;
     notifyListeners();
