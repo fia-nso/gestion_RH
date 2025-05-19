@@ -12,7 +12,6 @@ class AuthController extends ChangeNotifier {
 
   factory AuthController() {
     _instance ??= AuthController._();
-
     return _instance!;
   }
 
@@ -24,7 +23,9 @@ class AuthController extends ChangeNotifier {
   BaseService get service => _service!;
 
   AuthModel get user => _user!;
-  Employer get emoloyer => user as Employer;
+  Employer get employer => user as Employer;
+  Admin get admin => user as Admin;
+  Assistant get assistant => user as Assistant;
 
   bool loading = true;
   String? error;
@@ -39,10 +40,7 @@ class AuthController extends ChangeNotifier {
 
       final role = response.user!.userMetadata!['roles'][0];
 
-      _service = switch (role) {
-        'employer' => EmployerService(),
-        _ => throw UnimplementedError('not suppored')
-      };
+      _service = EmployerService();
 
       await getUserAndPushToHome();
     } catch (e) {
@@ -66,7 +64,7 @@ class AuthController extends ChangeNotifier {
       final response = await service.getUser();
 
       if (response == null) {
-        throw 'User doesnt exist';
+        throw 'User doesn\'t exist';
       }
 
       _user = response;
@@ -81,12 +79,6 @@ class AuthController extends ChangeNotifier {
   }
 
   void pushToHome() {
-    if (user.currentRole.id == 'admin') {
-      AppNavigator.pushReplacement('/admin-dashboard');
-    } else if (user.currentRole.id == 'employer') {
-      AppNavigator.pushReplacement('/employer-dashboard');
-    } else {
-      AppNavigator.pushReplacement('/assistant-dashboard');
-    }
+    AppNavigator.pushReplacement('/home');
   }
 }

@@ -34,4 +34,6 @@ abstract class BaseService<T extends AuthModel> {
   }
 
   Future<T?> getUser();
+
+  // Future<T?> getEmployer();
 }

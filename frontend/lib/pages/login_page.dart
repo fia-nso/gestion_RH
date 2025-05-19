@@ -1,5 +1,3 @@
-// import 'dart:convert';
-// import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:frontend/controller_provider/auth_provider.dart';
 import 'package:frontend/uttils/navigator.dart';
@@ -26,24 +24,15 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
-    _checkLoginStatus(); // Check if user is already logged in
+    _checkLoginStatus();
   }
 
-  // Check if user is already logged in
   Future<void> _checkLoginStatus() async {
     final prefs = await SharedPreferences.getInstance();
     final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
-    final userRole = prefs.getString('userRole');
 
-    if (isLoggedIn && userRole != null) {
-      // Navigate to appropriate dashboard based on role
-      if (userRole == 'admin') {
-        AppNavigator.pushReplacement('/admin-dashboard');
-      } else if (userRole == 'employer') {
-        AppNavigator.pushReplacement('/employer-dashboard');
-      } else {
-        AppNavigator.pushReplacement('/assistant-dashboard');
-      }
+    if (isLoggedIn) {
+      AppNavigator.pushReplacement('/home');
     }
   }
 
@@ -71,8 +60,7 @@ class _LoginPageState extends State<LoginPage> {
 
       if (user == null) {
         setState(() {
-          _error =
-              'Impossible de récupérer les informations de l\'utilisateur.';
+          _error = 'Impossible de récupérer les informations de l\'utilisateur.';
         });
         return;
       }
@@ -81,8 +69,7 @@ class _LoginPageState extends State<LoginPage> {
     } catch (e) {
       setState(() {
         if (e.toString().contains('Email not confirmed')) {
-          _error =
-              'Veuillez confirmer votre adresse e-mail pour vous connecter.';
+          _error = 'Veuillez confirmer votre adresse e-mail pour vous connecter.';
         } else if (e.toString().contains('Invalid login credentials')) {
           _error = 'E-mail ou mot de passe incorrect.';
         } else {
@@ -92,11 +79,10 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  // Optional: Logout function to clear SharedPreferences
   Future<void> _logout() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.clear(); // Clear all preferences
-    AppNavigator.pushReplacement('/login'); // Navigate back to login
+    await prefs.clear();
+    AppNavigator.pushReplacement('/login');
   }
 
   @override
@@ -108,8 +94,7 @@ class _LoginPageState extends State<LoginPage> {
             IconButton(
               icon: const Icon(Icons.language),
               onPressed: () {
-                final provider =
-                    Provider.of<LocaleProvider>(context, listen: false);
+                final provider = Provider.of<LocaleProvider>(context, listen: false);
                 final currentLocale = provider.locale;
                 final newLocale = currentLocale.languageCode == 'en'
                     ? const Locale('ar')
@@ -132,39 +117,30 @@ class _LoginPageState extends State<LoginPage> {
                     labelText: AppLocalizations.of(context)!.email,
                     hintText: AppLocalizations.of(context)!.email,
                     labelStyle: const TextStyle(
-                        color: Colors.black,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400),
+                        color: Colors.black, fontSize: 14, fontWeight: FontWeight.w400),
                     prefixIcon: const Icon(
                       Icons.email,
                       color: Color.fromARGB(255, 232, 184, 26),
                       size: 18,
                     ),
                     enabledBorder: OutlineInputBorder(
-                      borderSide:
-                          const BorderSide(color: Colors.grey, width: 1),
+                      borderSide: const BorderSide(color: Colors.grey, width: 1),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderSide:
-                          const BorderSide(color: Colors.grey, width: 0.75),
+                      borderSide: const BorderSide(color: Colors.grey, width: 0.75),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    floatingLabelStyle:
-                        const TextStyle(color: Colors.black, fontSize: 18)),
+                    floatingLabelStyle: const TextStyle(color: Colors.black, fontSize: 18)),
               ),
-              const SizedBox(
-                height: 20,
-              ),
+              const SizedBox(height: 20),
               TextField(
                 controller: _passwordController,
                 decoration: InputDecoration(
                     labelText: AppLocalizations.of(context)!.password,
                     hintText: AppLocalizations.of(context)!.password,
                     labelStyle: const TextStyle(
-                        color: Colors.black,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400),
+                        color: Colors.black, fontSize: 14, fontWeight: FontWeight.w400),
                     prefixIcon: const Icon(
                       Icons.key,
                       color: Color.fromARGB(255, 232, 184, 26),
@@ -172,9 +148,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _passwordVisible
-                            ? Icons.visibility
-                            : Icons.visibility_off,
+                        _passwordVisible ? Icons.visibility : Icons.visibility_off,
                         color: const Color.fromARGB(224, 253, 192, 39),
                       ),
                       onPressed: () {
@@ -184,17 +158,14 @@ class _LoginPageState extends State<LoginPage> {
                       },
                     ),
                     enabledBorder: OutlineInputBorder(
-                      borderSide:
-                          const BorderSide(color: Colors.grey, width: 1),
+                      borderSide: const BorderSide(color: Colors.grey, width: 1),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderSide:
-                          const BorderSide(color: Colors.grey, width: 0.75),
+                      borderSide: const BorderSide(color: Colors.grey, width: 0.75),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    floatingLabelStyle:
-                        const TextStyle(color: Colors.black, fontSize: 18)),
+                    floatingLabelStyle: const TextStyle(color: Colors.black, fontSize: 18)),
                 obscureText: !_passwordVisible,
               ),
               const SizedBox(height: 20),
@@ -202,10 +173,8 @@ class _LoginPageState extends State<LoginPage> {
                 onPressed: _login,
                 height: 45,
                 color: const Color.fromARGB(255, 232, 184, 26),
-                padding:
-                    const EdgeInsets.symmetric(vertical: 10, horizontal: 50),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
+                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 50),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 child: Text(AppLocalizations.of(context)!.se_connecter),
               ),
               if (_error != null)

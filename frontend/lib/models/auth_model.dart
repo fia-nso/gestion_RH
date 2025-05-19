@@ -1,5 +1,4 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
-// import 'dart:io';
 
 abstract class AuthModel {
   final String id;
@@ -37,24 +36,27 @@ class Employer extends AuthModel {
   static String get tableName => "employer";
 
   factory Employer.fromMap(Map<String, dynamic> map) {
+    final roleList = List<Map<String, dynamic>>.from(map['roles'] ?? []);
+    final roles = roleList.map((item) => AppRole.fromMap(item['app_role'])).toList();
+
+    // Safely handle null employer field
+    final employerData = map['employer'] as Map<String, dynamic>? ?? {};
     return Employer(
       id: map['id'] as String,
       name: map['name'] as String? ?? '',
-      contact: map['employer']['contact'],
-      details: map['employer']['details'],
-      photo: map['employer']['photo'] as String?,
-      roles: List<Map<String, dynamic>>.from(map['roles'] ?? [])
-          .map((item) => AppRole.fromMap(item['app_role']))
-          .toList(),
+      contact: employerData['contact'] as String?,
+      details: employerData['details'] as String?,
+      photo: employerData['photo'] as String?,
+      roles: roles.isNotEmpty ? roles : [AppRole(id: 'employer')], // Ensure at least one role
     );
   }
 
   @override
   Map<String, dynamic> toMap() => {
         'name': name,
-        "contact": contact,
-        "details": details,
-        "photo": photo,
+        'contact': contact,
+        'details': details,
+        'photo': photo,
       };
 
   @override
@@ -71,6 +73,82 @@ class Employer extends AuthModel {
       contact: contact ?? this.contact,
       details: details ?? this.details,
       photo: photo ?? this.photo,
+    );
+  }
+}
+
+class Admin extends AuthModel {
+  final String? name;
+
+  Admin({
+    required super.id,
+    required super.roles,
+    this.name,
+  });
+
+  static String get tableName => "admin";
+
+  factory Admin.fromMap(Map<String, dynamic> map) {
+    return Admin(
+      id: map['id'] as String,
+      name: map['name'] as String? ?? '',
+      roles: List<Map<String, dynamic>>.from(map['roles'] ?? [])
+          .map((item) => AppRole.fromMap(item['app_role']))
+          .toList(),
+    );
+  }
+
+  @override
+  Map<String, dynamic> toMap() => {
+        'name': name,
+      };
+
+  @override
+  Admin copyWith({
+    String? name,
+  }) {
+    return Admin(
+      id: id,
+      roles: roles,
+      name: name ?? this.name,
+    );
+  }
+}
+
+class Assistant extends AuthModel {
+  final String? name;
+
+  Assistant({
+    required super.id,
+    required super.roles,
+    this.name,
+  });
+
+  static String get tableName => "assistant";
+
+  factory Assistant.fromMap(Map<String, dynamic> map) {
+    return Assistant(
+      id: map['id'] as String,
+      name: map['name'] as String? ?? '',
+      roles: List<Map<String, dynamic>>.from(map['roles'] ?? [])
+          .map((item) => AppRole.fromMap(item['app_role']))
+          .toList(),
+    );
+  }
+
+  @override
+  Map<String, dynamic> toMap() => {
+        'name': name,
+      };
+
+  @override
+  Assistant copyWith({
+    String? name,
+  }) {
+    return Assistant(
+      id: id,
+      roles: roles,
+      name: name ?? this.name,
     );
   }
 }

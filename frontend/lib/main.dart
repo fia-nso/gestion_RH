@@ -7,6 +7,7 @@ import 'package:frontend/uttils/navigator.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'controller_provider/locale_provider.dart';
+import 'pages/home_page.dart';
 import 'pages/login_page.dart';
 import 'pages/register_page.dart';
 import 'pages/admin_dashboard.dart';
@@ -57,9 +58,10 @@ class MyApp extends StatelessWidget {
           '/': (_) => const SplashScreen(),
           '/login': (_) => const LoginPage(),
           '/register': (_) => const RegisterPage(),
-          '/admin-dashboard': (_) => const AdminDashboard(),
-          '/employer-dashboard': (_) => const EmployerDashboard(),
-          '/assistant-dashboard': (_) => const AssistantDashboard(),
+          '/home': (_) => const HomePage(),
+          // '/admin-dashboard': (_) => const AdminDashboard(),
+          // '/employer-dashboard': (_) => const EmployerDashboard(),
+          // '/assistant-dashboard': (_) => const AssistantDashboard(),
         },
       );
     });

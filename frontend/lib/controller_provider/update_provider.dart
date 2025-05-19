@@ -17,10 +17,24 @@ class EmployerUpdateController extends ChangeNotifier {
   XFile? photo;
 
   void init() {
-    final employer = AuthController().emoloyer;
-    nameController.text = employer.name ?? '';
-    contactController.text = employer.contact ?? '';
-    detailsController.text = employer.details ?? '';
+    final authController = AuthController();
+    final role = authController.user.currentRole.id;
+    switch (role) {
+      case 'employer':
+        final employer = authController.employer;
+        nameController.text = employer.name ?? '';
+        contactController.text = employer.contact ?? '';
+        detailsController.text = employer.details ?? '';
+        break;
+      case 'admin':
+        final admin = authController.admin;
+        nameController.text = admin.name ?? '';
+        break;
+      case 'assistant':
+        final assistant = authController.assistant;
+        nameController.text = assistant.name ?? '';
+        break;
+    }
     notifyListeners();
   }
 
@@ -39,16 +53,21 @@ class EmployerUpdateController extends ChangeNotifier {
     notifyListeners();
 
     try {
+      final authController = AuthController();
+      final role = authController.user.currentRole.id;
+      final userId = authController.user.id;
+
       final success = await EmployerService().updateUser(
+        userId: userId,
+        role: role,
         name: nameController.text.trim(),
-        contact: contactController.text.trim(),
-        details: detailsController.text.trim(),
+        contact: role == 'employer' ? contactController.text.trim() : null,
+        details: role == 'employer' ? detailsController.text.trim() : null,
         photo: photo,
       );
 
       if (success) {
-        // Refresh the AuthController to update the employer data
-        await AuthController().getUser();
+        await authController.getUser();
       } else {
         error = 'Failed to update profile';
       }
