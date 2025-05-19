@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/controller_provider/auth_provider.dart';
-import 'package:frontend/services/auth_service.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:frontend/models/auth_model.dart';
+import 'package:frontend/services/auth_service.dart';
+import 'package:provider/provider.dart';
+import 'package:frontend/controller_provider/auth_provider.dart';
 
 class EmployerUpdateController extends ChangeNotifier {
-  EmployerUpdateController() {
-    init();
+  EmployerUpdateController(BuildContext context) {
+    init(context);
   }
 
   bool loading = false;
@@ -16,8 +18,8 @@ class EmployerUpdateController extends ChangeNotifier {
   final detailsController = TextEditingController();
   XFile? photo;
 
-  void init() {
-    final authController = AuthController();
+  void init(BuildContext context) {
+    final authController = Provider.of<AuthController>(context, listen: false);
     final role = authController.user.currentRole.id;
     switch (role) {
       case 'employer':
@@ -38,7 +40,7 @@ class EmployerUpdateController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> pickPhoto() async {
+  Future<void> pickPhoto(BuildContext context) async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
@@ -47,13 +49,14 @@ class EmployerUpdateController extends ChangeNotifier {
     }
   }
 
-  Future<void> save() async {
+  Future<void> save(BuildContext context) async {
     loading = true;
     error = null;
     notifyListeners();
 
     try {
-      final authController = AuthController();
+      final authController =
+          Provider.of<AuthController>(context, listen: false);
       final role = authController.user.currentRole.id;
       final userId = authController.user.id;
 
@@ -69,14 +72,22 @@ class EmployerUpdateController extends ChangeNotifier {
       if (success) {
         await authController.getUser();
       } else {
-        error = 'Failed to update profile';
+        error = 'Échec de la mise à jour du profil';
       }
     } catch (e) {
-      error = 'Error updating profile: $e';
-      print('Save error: $e');
+      error = 'Erreur lors de la mise à jour du profil : $e';
+      print('Erreur de sauvegarde : $e');
     }
 
     loading = false;
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    contactController.dispose();
+    detailsController.dispose();
+    super.dispose();
   }
 }

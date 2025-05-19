@@ -264,11 +264,67 @@ class EmployerService extends BaseService<AuthModel> {
     return phoneRegExp.hasMatch(contact) || emailRegExp.hasMatch(contact);
   }
 
-  createEmployee(
-      {required String email,
-      required String password,
-      required String name,
-      String? contact,
-      String? details,
-      XFile? photo}) {}
+  Future<bool> createEmployee({
+    required String email,
+    required String password,
+    required String name,
+    String? contact,
+    String? details,
+    XFile? photo,
+  }) async {
+    try {
+      final currentUser = client.auth.currentUser!;
+      final roleResponse = await client
+          .from('user_roles')
+          .select('app_role(id)')
+          .eq('user_id', currentUser.id)
+          .single();
+      if (roleResponse['app_role']['id'] != 'admin') {
+        print('Non autorisé : seuls les admins peuvent créer des employés');
+        return false;
+      }
+
+      // Créer un nouvel utilisateur
+      final authResponse =
+          await client.auth.signUp(email: email, password: password);
+      if (authResponse.user == null) {
+        print('Échec de la création du compte utilisateur');
+        return false;
+      }
+
+      final userId = authResponse.user!.id;
+
+      // Insérer dans la table users
+      await client.from('users').insert({'id': userId, 'name': name});
+
+      // Insérer dans la table employer
+      final updates = {'id': userId};
+      if (contact != null) updates['contact'] = contact.trim();
+      if (details != null) updates['details'] = details.trim();
+      await client.from('employer').insert(updates);
+
+      // Télécharger la photo si fournie
+      if (photo != null) {
+        final photoPath =
+            'employer/$userId/${DateTime.now().millisecondsSinceEpoch}.jpg';
+        final photoUrl = await _uploadPhoto(photo, photoPath);
+        await client
+            .from('employer')
+            .update({'photo': photoUrl}).eq('id', userId);
+      }
+
+      // Assigner le rôle employer
+      await client.from('user_roles').insert({
+        'user_id': userId,
+        'role_id': 'employer',
+        'app_role': {'id': 'employer'}
+      });
+
+      print('Employé créé : $userId');
+      return true;
+    } catch (e) {
+      print('createEmployee() a échoué : $e');
+      return false;
+    }
+  }
 }

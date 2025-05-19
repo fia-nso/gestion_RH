@@ -16,7 +16,8 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => EmployerUpdateController()),
+        ChangeNotifierProvider(
+            create: (_) => EmployerUpdateController(context)),
         ChangeNotifierProvider(create: (_) => EmployeeManagementController()),
       ],
       child: const _HomePageBody(),
@@ -31,7 +32,8 @@ class _HomePageBody extends StatefulWidget {
   State<_HomePageBody> createState() => _HomePageBodyState();
 }
 
-class _HomePageBodyState extends State<_HomePageBody> with SingleTickerProviderStateMixin {
+class _HomePageBodyState extends State<_HomePageBody>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -39,7 +41,7 @@ class _HomePageBodyState extends State<_HomePageBody> with SingleTickerProviderS
     super.initState();
     final authController = Provider.of<AuthController>(context, listen: false);
     final userRole = authController.user.currentRole.id;
-    
+
     int tabCount = userRole == 'admin' ? 2 : 1;
     _tabController = TabController(length: tabCount, vsync: this);
   }
@@ -55,7 +57,7 @@ class _HomePageBodyState extends State<_HomePageBody> with SingleTickerProviderS
     final localeController = Provider.of<LocaleProvider>(context);
     final authController = context.watch<AuthController>();
     final userRole = authController.user.currentRole.id;
-    final userName = authController.user is Employer 
+    final userName = authController.user is Employer
         ? (authController.user as Employer).name
         : authController.user is Admin
             ? (authController.user as Admin).name
@@ -64,11 +66,11 @@ class _HomePageBodyState extends State<_HomePageBody> with SingleTickerProviderS
     List<Tab> tabs = [];
     List<Widget> tabViews = [];
 
-    tabs.add(Tab(text: 'profile' ?? 'Profile'));
+    tabs.add(Tab(text: AppLocalizations.of(context)!.profile));
     tabViews.add(_buildProfileTab(context, authController, userRole));
 
     if (userRole == 'admin') {
-      tabs.add(Tab(text: 'employees' ?? 'Employees'));
+      tabs.add(Tab(text: AppLocalizations.of(context)!.employees));
       tabViews.add(const EmployeeManagementView());
     }
 
@@ -89,15 +91,17 @@ class _HomePageBodyState extends State<_HomePageBody> with SingleTickerProviderS
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () => _showLogoutDialog(context),
-            tooltip: 'logout' ?? 'Logout',
+            tooltip: AppLocalizations.of(context)!.logout,
           ),
         ],
-        bottom: tabs.length > 1 ? TabBar(
-          controller: _tabController,
-          tabs: tabs,
-        ) : null,
+        bottom: tabs.length > 1
+            ? TabBar(
+                controller: _tabController,
+                tabs: tabs,
+              )
+            : null,
       ),
-      body: tabs.length > 1 
+      body: tabs.length > 1
           ? TabBarView(
               controller: _tabController,
               children: tabViews,
@@ -109,17 +113,18 @@ class _HomePageBodyState extends State<_HomePageBody> with SingleTickerProviderS
   String _getRoleTitle(BuildContext context, String role) {
     switch (role) {
       case 'admin':
-        return AppLocalizations.of(context)!.admin ?? 'Admin';
+        return AppLocalizations.of(context)!.admin;
       case 'employer':
-        return AppLocalizations.of(context)!.employer ?? 'Employer';
+        return AppLocalizations.of(context)!.employer;
       case 'assistant':
-        return AppLocalizations.of(context)!.assistant ?? 'Assistant';
+        return AppLocalizations.of(context)!.assistant;
       default:
         return 'Dashboard';
     }
   }
 
-  Widget _buildProfileTab(BuildContext context, AuthController authController, String userRole) {
+  Widget _buildProfileTab(
+      BuildContext context, AuthController authController, String userRole) {
     if (userRole == 'employer') {
       return _buildEmployerProfile(context, authController);
     } else {
@@ -127,7 +132,8 @@ class _HomePageBodyState extends State<_HomePageBody> with SingleTickerProviderS
     }
   }
 
-  Widget _buildEmployerProfile(BuildContext context, AuthController authController) {
+  Widget _buildEmployerProfile(
+      BuildContext context, AuthController authController) {
     final controller = context.watch<EmployerUpdateController>();
     final employer = authController.employer;
 
@@ -151,21 +157,21 @@ class _HomePageBodyState extends State<_HomePageBody> with SingleTickerProviderS
                       CircleAvatar(
                         radius: 50,
                         backgroundColor: Colors.grey[200],
-                        backgroundImage: employer.photo != null && employer.photo!.isNotEmpty
-                            ? NetworkImage(employer.photo!)
-                            : null,
-                        onBackgroundImageError: employer.photo != null && employer.photo!.isNotEmpty
-                            ? (exception, stackTrace) {
-                                print('Image loading error: $exception');
-                              }
-                            : null,
+                        backgroundImage:
+                            employer.photo != null && employer.photo!.isNotEmpty
+                                ? NetworkImage(employer.photo!)
+                                : null,
+                        onBackgroundImageError: (exception, stackTrace) {
+                          print(
+                              'Erreur de chargement de l\'image : $exception');
+                        },
                         child: employer.photo == null || employer.photo!.isEmpty
                             ? const Icon(Icons.person, size: 50)
                             : null,
                       ),
                       const SizedBox(height: 10),
                       TextButton(
-                        onPressed: controller.pickPhoto,
+                        onPressed: () => controller.pickPhoto(context),
                         child: Text(AppLocalizations.of(context)!.upload_photo),
                       ),
                       const SizedBox(height: 20),
@@ -192,7 +198,7 @@ class _HomePageBodyState extends State<_HomePageBody> with SingleTickerProviderS
                       TextField(
                         controller: controller.detailsController,
                         decoration: InputDecoration(
-                          labelText: 'details',
+                          labelText: AppLocalizations.of(context)!.details,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
@@ -202,7 +208,7 @@ class _HomePageBodyState extends State<_HomePageBody> with SingleTickerProviderS
                       controller.loading
                           ? const CircularProgressIndicator()
                           : ElevatedButton(
-                              onPressed: controller.save,
+                              onPressed: () => controller.save(context),
                               child: Text(AppLocalizations.of(context)!.save),
                             ),
                       if (controller.error != null)
@@ -222,8 +228,9 @@ class _HomePageBodyState extends State<_HomePageBody> with SingleTickerProviderS
               );
   }
 
-  Widget _buildGenericProfile(BuildContext context, AuthController authController, String userRole) {
-    final userName = userRole == 'admin' 
+  Widget _buildGenericProfile(
+      BuildContext context, AuthController authController, String userRole) {
+    final userName = userRole == 'admin'
         ? (authController.user as Admin).name
         : (authController.user as Assistant).name;
 
@@ -238,13 +245,13 @@ class _HomePageBodyState extends State<_HomePageBody> with SingleTickerProviderS
           ),
           const SizedBox(height: 20),
           Text(
-            '${AppLocalizations.of(context)!.bienvenue}, ${userName ?? "User"}',
+            '${AppLocalizations.of(context)!.bienvenue}, ${userName ?? "Utilisateur"}',
             style: Theme.of(context).textTheme.titleLarge,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 20),
           Text(
-            'Role: ${userRole.toUpperCase()}',
+            'Rôle : ${userRole.toUpperCase()}',
             style: Theme.of(context).textTheme.titleMedium,
           ),
         ],
@@ -258,8 +265,8 @@ class _HomePageBodyState extends State<_HomePageBody> with SingleTickerProviderS
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('logout'),
-          content: Text('confirm_logout'),
+          title: Text(AppLocalizations.of(context)!.logout),
+          content: Text(AppLocalizations.of(context)!.confirm_logout),
           actions: <Widget>[
             TextButton(
               child: Text(AppLocalizations.of(context)!.cancel),
@@ -268,7 +275,7 @@ class _HomePageBodyState extends State<_HomePageBody> with SingleTickerProviderS
               },
             ),
             TextButton(
-              child: Text('logout'),
+              child: Text(AppLocalizations.of(context)!.logout),
               onPressed: () async {
                 Navigator.of(context).pop();
                 await EmployerService().signOut();
@@ -287,7 +294,7 @@ class _HomePageBodyState extends State<_HomePageBody> with SingleTickerProviderS
 // Employee Management Controller
 class EmployeeManagementController extends ChangeNotifier {
   final EmployerService _service = EmployerService();
-  
+
   List<Employer> employees = [];
   bool loading = false;
   String? error;
@@ -302,7 +309,7 @@ class EmployeeManagementController extends ChangeNotifier {
       loading = false;
       notifyListeners();
     } catch (e) {
-      error = 'Failed to load employees: $e';
+      error = 'Échec du chargement des employés : $e';
       loading = false;
       notifyListeners();
     }
@@ -332,10 +339,10 @@ class EmployeeManagementController extends ChangeNotifier {
       if (success) {
         await loadEmployees();
       } else {
-        throw Exception('Create failed');
+        throw Exception('Échec de la création');
       }
     } catch (e) {
-      error = 'Failed to create employee: $e';
+      error = 'Échec de la création de l\'employé : $e';
       loading = false;
       notifyListeners();
     }
@@ -364,10 +371,10 @@ class EmployeeManagementController extends ChangeNotifier {
       if (success) {
         await loadEmployees();
       } else {
-        throw Exception('Update failed');
+        throw Exception('Échec de la mise à jour');
       }
     } catch (e) {
-      error = 'Failed to update employee: $e';
+      error = 'Échec de la mise à jour de l\'employé : $e';
       loading = false;
       notifyListeners();
     }
@@ -383,10 +390,10 @@ class EmployeeManagementController extends ChangeNotifier {
       if (success) {
         await loadEmployees();
       } else {
-        throw Exception('Delete failed');
+        throw Exception('Échec de la suppression');
       }
     } catch (e) {
-      error = 'Failed to delete employee: $e';
+      error = 'Échec de la suppression de l\'employé : $e';
       loading = false;
       notifyListeners();
     }
@@ -426,14 +433,14 @@ class _EmployeeManagementViewState extends State<EmployeeManagementView> {
                       Text(controller.error!),
                       ElevatedButton(
                         onPressed: controller.loadEmployees,
-                        child: Text('retry'),
+                        child: Text(appLocalizations.retry),
                       ),
                     ],
                   ),
                 )
               : controller.employees.isEmpty
                   ? Center(
-                      child: Text('no_employees'),
+                      child: Text(appLocalizations.no_employees),
                     )
                   : ListView.builder(
                       itemCount: controller.employees.length,
@@ -443,15 +450,19 @@ class _EmployeeManagementViewState extends State<EmployeeManagementView> {
                           margin: const EdgeInsets.all(8.0),
                           child: ListTile(
                             leading: CircleAvatar(
-                              backgroundImage: employee.photo != null && employee.photo!.isNotEmpty
+                              backgroundImage: employee.photo != null &&
+                                      employee.photo!.isNotEmpty
                                   ? NetworkImage(employee.photo!)
                                   : null,
-                              child: employee.photo == null || employee.photo!.isEmpty
+                              child: employee.photo == null ||
+                                      employee.photo!.isEmpty
                                   ? const Icon(Icons.person)
                                   : null,
                             ),
-                            title: Text(employee.name ?? 'no_name'),
-                            subtitle: Text(employee.contact ?? 'no_contact'),
+                            title:
+                                Text(employee.name ?? appLocalizations.no_name),
+                            subtitle: Text(employee.contact ??
+                                appLocalizations.no_contact),
                             trailing: PopupMenuButton<String>(
                               onSelected: (String value) {
                                 switch (value) {
@@ -459,14 +470,15 @@ class _EmployeeManagementViewState extends State<EmployeeManagementView> {
                                     _showEditEmployeeDialog(context, employee);
                                     break;
                                   case 'delete':
-                                    _showDeleteEmployeeDialog(context, employee);
+                                    _showDeleteEmployeeDialog(
+                                        context, employee);
                                     break;
                                 }
                               },
                               itemBuilder: (BuildContext context) => [
                                 PopupMenuItem<String>(
                                   value: 'edit',
-                                  child: Text('edit'),
+                                  child: Text(appLocalizations.edit),
                                 ),
                                 PopupMenuItem<String>(
                                   value: 'delete',
@@ -474,7 +486,8 @@ class _EmployeeManagementViewState extends State<EmployeeManagementView> {
                                 ),
                               ],
                             ),
-                            onTap: () => _showEmployeeDetails(context, employee),
+                            onTap: () =>
+                                _showEmployeeDetails(context, employee),
                           ),
                         );
                       },
@@ -487,10 +500,11 @@ class _EmployeeManagementViewState extends State<EmployeeManagementView> {
   }
 
   void _showEmployeeDetails(BuildContext context, Employer employee) {
+    final appLocalizations = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(employee.name ?? 'employee_details'),
+        title: Text(employee.name ?? appLocalizations.employee_details),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -503,15 +517,15 @@ class _EmployeeManagementViewState extends State<EmployeeManagementView> {
                 ),
               ),
             const SizedBox(height: 16),
-            Text('${AppLocalizations.of(context)!.name}: ${employee.name ?? 'N/A'}'),
-            Text('${AppLocalizations.of(context)!.contact}: ${employee.contact ?? 'N/A'}'),
-            Text("details: ${employee.details ?? 'N/A'}"),
+            Text('${appLocalizations.name}: ${employee.name ?? 'N/A'}'),
+            Text('${appLocalizations.contact}: ${employee.contact ?? 'N/A'}'),
+            Text("${appLocalizations.details}: ${employee.details ?? 'N/A'}"),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text('close'),
+            child: Text(appLocalizations.close),
           ),
         ],
       ),
@@ -526,29 +540,35 @@ class _EmployeeManagementViewState extends State<EmployeeManagementView> {
   }
 
   void _showEditEmployeeDialog(BuildContext context, Employer employee) {
+    final controller = context.read<EmployeeManagementController>();
     showDialog(
       context: context,
-      builder: (context) => EditEmployeeDialog(employee: employee),
+      builder: (context) =>
+          EditEmployeeDialog(employee: employee, controller: controller),
     );
   }
 
   void _showDeleteEmployeeDialog(BuildContext context, Employer employee) {
+    final appLocalizations = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('delete_employee'),
-        content: Text("confirm_delete_employee ${employee.name }"),
+        title: Text(appLocalizations.delete_employee),
+        content: Text(
+            "${appLocalizations.confirm_delete_employee} ${employee.name}"),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text(AppLocalizations.of(context)!.cancel),
+            child: Text(appLocalizations.cancel),
           ),
           TextButton(
             onPressed: () async {
               Navigator.of(context).pop();
-              await context.read<EmployeeManagementController>().deleteEmployee(employee.id);
+              await context
+                  .read<EmployeeManagementController>()
+                  .deleteEmployee(employee.id);
             },
-            child: Text(AppLocalizations.of(context)!.delete),
+            child: Text(appLocalizations.delete),
           ),
         ],
       ),
@@ -598,7 +618,7 @@ class _CreateEmployeeDialogState extends State<CreateEmployeeDialog> {
     final appLocalizations = AppLocalizations.of(context)!;
 
     return AlertDialog(
-      title: Text('create_employee'),
+      title: Text(appLocalizations.create_employee),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -622,7 +642,8 @@ class _CreateEmployeeDialogState extends State<CreateEmployeeDialog> {
                   if (value == null || value.trim().isEmpty) {
                     return appLocalizations.email_required;
                   }
-                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                      .hasMatch(value)) {
                     return appLocalizations.invalid_email;
                   }
                   return null;
@@ -630,27 +651,31 @@ class _CreateEmployeeDialogState extends State<CreateEmployeeDialog> {
               ),
               TextFormField(
                 controller: _passwordController,
-                decoration: InputDecoration(labelText: appLocalizations.password),
+                decoration:
+                    InputDecoration(labelText: appLocalizations.password),
                 obscureText: true,
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return 'password_required';
+                    return appLocalizations.password_required;
                   }
                   if (value.length < 6) {
-                    return 'password_too_short';
+                    return appLocalizations.password_too_short;
                   }
                   return null;
                 },
               ),
               TextFormField(
                 controller: _contactController,
-                decoration: InputDecoration(labelText: appLocalizations.contact),
+                decoration:
+                    InputDecoration(labelText: appLocalizations.contact),
                 validator: (value) {
                   if (value != null && value.trim().isNotEmpty) {
                     final phoneRegExp = RegExp(r'^\+?[1-9]\d{1,14}$');
-                    final emailRegExp = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-                    if (!phoneRegExp.hasMatch(value) && !emailRegExp.hasMatch(value)) {
-                      return 'invalid_contact';
+                    final emailRegExp =
+                        RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                    if (!phoneRegExp.hasMatch(value) &&
+                        !emailRegExp.hasMatch(value)) {
+                      return appLocalizations.invalid_contact;
                     }
                   }
                   return null;
@@ -658,7 +683,8 @@ class _CreateEmployeeDialogState extends State<CreateEmployeeDialog> {
               ),
               TextFormField(
                 controller: _detailsController,
-                decoration: InputDecoration(labelText: 'details'),
+                decoration:
+                    InputDecoration(labelText: appLocalizations.details),
                 maxLines: 3,
               ),
               const SizedBox(height: 16),
@@ -669,7 +695,7 @@ class _CreateEmployeeDialogState extends State<CreateEmployeeDialog> {
                     child: Text(appLocalizations.upload_photo),
                   ),
                   const SizedBox(width: 8),
-                  if (_photo != null) Text('photo_selected'),
+                  if (_photo != null) Text(appLocalizations.photo_selected),
                 ],
               ),
             ],
@@ -685,13 +711,17 @@ class _CreateEmployeeDialogState extends State<CreateEmployeeDialog> {
           onPressed: () async {
             if (_formKey.currentState!.validate()) {
               await context.read<EmployeeManagementController>().createEmployee(
-                name: _nameController.text,
-                email: _emailController.text,
-                password: _passwordController.text,
-                contact: _contactController.text.isEmpty ? null : _contactController.text,
-                details: _detailsController.text.isEmpty ? null : _detailsController.text,
-                photo: _photo,
-              );
+                    name: _nameController.text,
+                    email: _emailController.text,
+                    password: _passwordController.text,
+                    contact: _contactController.text.isEmpty
+                        ? null
+                        : _contactController.text,
+                    details: _detailsController.text.isEmpty
+                        ? null
+                        : _detailsController.text,
+                    photo: _photo,
+                  );
               if (context.mounted) Navigator.of(context).pop();
             }
           },
@@ -705,8 +735,10 @@ class _CreateEmployeeDialogState extends State<CreateEmployeeDialog> {
 // Edit Employee Dialog
 class EditEmployeeDialog extends StatefulWidget {
   final Employer employee;
+  final EmployeeManagementController controller;
 
-  const EditEmployeeDialog({super.key, required this.employee});
+  const EditEmployeeDialog(
+      {super.key, required this.employee, required this.controller});
 
   @override
   State<EditEmployeeDialog> createState() => _EditEmployeeDialogState();
@@ -757,7 +789,8 @@ class _EditEmployeeDialogState extends State<EditEmployeeDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (widget.employee.photo != null && widget.employee.photo!.isNotEmpty)
+              if (widget.employee.photo != null &&
+                  widget.employee.photo!.isNotEmpty)
                 CircleAvatar(
                   radius: 30,
                   backgroundImage: NetworkImage(widget.employee.photo!),
@@ -774,13 +807,16 @@ class _EditEmployeeDialogState extends State<EditEmployeeDialog> {
               ),
               TextFormField(
                 controller: _contactController,
-                decoration: InputDecoration(labelText: appLocalizations.contact),
+                decoration:
+                    InputDecoration(labelText: appLocalizations.contact),
                 validator: (value) {
                   if (value != null && value.trim().isNotEmpty) {
                     final phoneRegExp = RegExp(r'^\+?[1-9]\d{1,14}$');
-                    final emailRegExp = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-                    if (!phoneRegExp.hasMatch(value) && !emailRegExp.hasMatch(value)) {
-                      return 'invalid_contact';
+                    final emailRegExp =
+                        RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                    if (!phoneRegExp.hasMatch(value) &&
+                        !emailRegExp.hasMatch(value)) {
+                      return appLocalizations.invalid_contact;
                     }
                   }
                   return null;
@@ -788,7 +824,8 @@ class _EditEmployeeDialogState extends State<EditEmployeeDialog> {
               ),
               TextFormField(
                 controller: _detailsController,
-                decoration: InputDecoration(labelText: 'details'),
+                decoration:
+                    InputDecoration(labelText: appLocalizations.details),
                 maxLines: 3,
               ),
               const SizedBox(height: 16),
@@ -799,7 +836,7 @@ class _EditEmployeeDialogState extends State<EditEmployeeDialog> {
                     child: Text(appLocalizations.change_photo),
                   ),
                   const SizedBox(width: 8),
-                  if (_photo != null) Text('photo_selected'),
+                  if (_photo != null) Text(appLocalizations.photo_selected),
                 ],
               ),
             ],
@@ -814,11 +851,15 @@ class _EditEmployeeDialogState extends State<EditEmployeeDialog> {
         ElevatedButton(
           onPressed: () async {
             if (_formKey.currentState!.validate()) {
-              await context.read<EmployeeManagementController>().updateEmployee(
+              await widget.controller.updateEmployee(
                 id: widget.employee.id,
                 name: _nameController.text,
-                contact: _contactController.text.isEmpty ? null : _contactController.text,
-                details: _detailsController.text.isEmpty ? null : _detailsController.text,
+                contact: _contactController.text.isEmpty
+                    ? null
+                    : _contactController.text,
+                details: _detailsController.text.isEmpty
+                    ? null
+                    : _detailsController.text,
                 photo: _photo,
               );
               if (context.mounted) Navigator.of(context).pop();

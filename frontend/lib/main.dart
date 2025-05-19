@@ -10,9 +10,6 @@ import 'controller_provider/locale_provider.dart';
 import 'pages/home_page.dart';
 import 'pages/login_page.dart';
 import 'pages/register_page.dart';
-import 'pages/admin_dashboard.dart';
-import 'pages/employer_dashboard.dart';
-import 'pages/assistant_dashboard.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -59,9 +56,6 @@ class MyApp extends StatelessWidget {
           '/login': (_) => const LoginPage(),
           '/register': (_) => const RegisterPage(),
           '/home': (_) => const HomePage(),
-          // '/admin-dashboard': (_) => const AdminDashboard(),
-          // '/employer-dashboard': (_) => const EmployerDashboard(),
-          // '/assistant-dashboard': (_) => const AssistantDashboard(),
         },
       );
     });
