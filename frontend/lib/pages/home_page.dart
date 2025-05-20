@@ -470,8 +470,10 @@ class _EmployeeManagementViewState extends State<EmployeeManagementView> {
                                     _showEditEmployeeDialog(context, employee);
                                     break;
                                   case 'delete':
+                                    final controller = context.read<
+                                        EmployeeManagementController>(); // Access the controller here
                                     _showDeleteEmployeeDialog(
-                                        context, employee);
+                                        context, employee, controller);
                                     break;
                                 }
                               },
@@ -533,9 +535,12 @@ class _EmployeeManagementViewState extends State<EmployeeManagementView> {
   }
 
   void _showCreateEmployeeDialog(BuildContext context) {
+    final controller = context
+        .read<EmployeeManagementController>(); // Access the controller here
     showDialog(
       context: context,
-      builder: (context) => const CreateEmployeeDialog(),
+      builder: (context) =>
+          CreateEmployeeDialog(controller: controller), // Pass the controller
     );
   }
 
@@ -548,25 +553,24 @@ class _EmployeeManagementViewState extends State<EmployeeManagementView> {
     );
   }
 
-  void _showDeleteEmployeeDialog(BuildContext context, Employer employee) {
+  void _showDeleteEmployeeDialog(BuildContext context, Employer employee,
+      EmployeeManagementController controller) {
     final appLocalizations = AppLocalizations.of(context)!;
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: Text(appLocalizations.delete_employee),
         content: Text(
             "${appLocalizations.confirm_delete_employee} ${employee.name}"),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: Text(appLocalizations.cancel),
           ),
           TextButton(
             onPressed: () async {
-              Navigator.of(context).pop();
-              await context
-                  .read<EmployeeManagementController>()
-                  .deleteEmployee(employee.id);
+              Navigator.of(dialogContext).pop();
+              await controller.deleteEmployee(employee.id);
             },
             child: Text(appLocalizations.delete),
           ),
@@ -578,7 +582,10 @@ class _EmployeeManagementViewState extends State<EmployeeManagementView> {
 
 // Create Employee Dialog
 class CreateEmployeeDialog extends StatefulWidget {
-  const CreateEmployeeDialog({super.key});
+  final EmployeeManagementController controller; // Add this parameter
+
+  const CreateEmployeeDialog(
+      {super.key, required this.controller}); // Update constructor
 
   @override
   State<CreateEmployeeDialog> createState() => _CreateEmployeeDialogState();
@@ -710,18 +717,19 @@ class _CreateEmployeeDialogState extends State<CreateEmployeeDialog> {
         ElevatedButton(
           onPressed: () async {
             if (_formKey.currentState!.validate()) {
-              await context.read<EmployeeManagementController>().createEmployee(
-                    name: _nameController.text,
-                    email: _emailController.text,
-                    password: _passwordController.text,
-                    contact: _contactController.text.isEmpty
-                        ? null
-                        : _contactController.text,
-                    details: _detailsController.text.isEmpty
-                        ? null
-                        : _detailsController.text,
-                    photo: _photo,
-                  );
+              await widget.controller.createEmployee(
+                // Use the passed controller
+                name: _nameController.text,
+                email: _emailController.text,
+                password: _passwordController.text,
+                contact: _contactController.text.isEmpty
+                    ? null
+                    : _contactController.text,
+                details: _detailsController.text.isEmpty
+                    ? null
+                    : _detailsController.text,
+                photo: _photo,
+              );
               if (context.mounted) Navigator.of(context).pop();
             }
           },
