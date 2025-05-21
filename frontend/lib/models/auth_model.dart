@@ -18,11 +18,29 @@ abstract class AuthModel {
   static String get usersTableName => "users";
 }
 
+enum EmploymentStatus {
+  active('Active'),
+  onLeave('On Leave'),
+  resigned('Resigned');
+
+  final String value;
+  const EmploymentStatus(this.value);
+
+  static EmploymentStatus fromString(String value) {
+    return EmploymentStatus.values.firstWhere(
+      (status) => status.value == value,
+      orElse: () => EmploymentStatus.active,
+    );
+  }
+}
+
 class Employer extends AuthModel {
   final String? name;
   final String? contact;
   final String? details;
   final String? photo;
+  final DateTime? startDate;
+  final EmploymentStatus? employmentStatus;
 
   Employer({
     required super.id,
@@ -31,6 +49,8 @@ class Employer extends AuthModel {
     this.contact,
     this.details,
     this.photo,
+    this.startDate,
+    this.employmentStatus,
   });
 
   static String get tableName => "employer";
@@ -47,7 +67,13 @@ class Employer extends AuthModel {
       contact: employerData['contact'] as String?,
       details: employerData['details'] as String?,
       photo: employerData['photo'] as String?,
-      roles: roles.isNotEmpty ? roles : [AppRole(id: 'employer')], // Ensure at least one role
+      startDate: employerData['start_date'] != null
+          ? DateTime.parse(employerData['start_date'] as String)
+          : null,
+      employmentStatus: employerData['employment_status'] != null
+          ? EmploymentStatus.fromString(employerData['employment_status'] as String)
+          : null,
+      roles: roles.isNotEmpty ? roles : [AppRole(id: 'employer')],
     );
   }
 
@@ -57,6 +83,8 @@ class Employer extends AuthModel {
         'contact': contact,
         'details': details,
         'photo': photo,
+        'start_date': startDate?.toIso8601String(),
+        'employment_status': employmentStatus?.value,
       };
 
   @override
@@ -65,6 +93,8 @@ class Employer extends AuthModel {
     String? contact,
     String? details,
     String? photo,
+    DateTime? startDate,
+    EmploymentStatus? employmentStatus,
   }) {
     return Employer(
       id: id,
@@ -73,6 +103,8 @@ class Employer extends AuthModel {
       contact: contact ?? this.contact,
       details: details ?? this.details,
       photo: photo ?? this.photo,
+      startDate: startDate ?? this.startDate,
+      employmentStatus: employmentStatus ?? this.employmentStatus,
     );
   }
 }

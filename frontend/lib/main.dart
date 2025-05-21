@@ -6,6 +6,7 @@ import 'package:frontend/pages/splash_screen.dart';
 import 'package:frontend/uttils/navigator.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'controller_provider/employee_management_controller.dart';
 import 'controller_provider/locale_provider.dart';
 import 'pages/home_page.dart';
 import 'pages/login_page.dart';
@@ -24,6 +25,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => LocaleProvider()),
         ChangeNotifierProvider.value(value: AuthController()),
+        ChangeNotifierProvider(create: (_) => EmployeeManagementController()),
       ],
       child: const MyApp(),
     ),

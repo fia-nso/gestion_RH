@@ -3,14 +3,22 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:frontend/models/auth_model.dart';
 import 'package:frontend/services/base_service.dart';
+import 'package:frontend/uttils/api_fetcher.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class EmployerService extends BaseService<AuthModel> {
+  late ApiFetcher apiFetcher;
+
+  EmployerService() {
+    final session = client.auth.currentSession;
+    final accessToken = session?.accessToken;
+    apiFetcher = ApiFetcher(accessToken: accessToken);
+  }
+
   Future<List<Employer>> getAllEmployees() async {
     try {
       print('Fetching all employees...');
-      // Step 1: Get user_ids of users with the 'employer' role
       final roleResponse = await client
           .from('user_roles')
           .select('user_id')
@@ -22,18 +30,16 @@ class EmployerService extends BaseService<AuthModel> {
         return [];
       }
 
-      // Extract the user IDs
       final userIds =
           roleResponse.map((item) => item['user_id'] as String).toList();
       print('Employer user IDs: $userIds');
 
-      // Step 2: Fetch the users with their employer data
       final response = await client.from('users').select('''
           id,
           name,
-          employer!left(contact, details, photo),
+          employer!left(contact, details, photo, start_date, employment_status),
           roles:user_roles(*, app_role!inner(id))
-        ''').inFilter('id', userIds); // Changed from .in_ to .in
+        ''').inFilter('id', userIds);
 
       print('Raw Supabase response: $response');
       if (response.isEmpty) {
@@ -65,9 +71,10 @@ class EmployerService extends BaseService<AuthModel> {
     String? contact,
     String? details,
     XFile? photo,
+    DateTime? startDate,
+    EmploymentStatus? employmentStatus,
   }) async {
     try {
-      // Validate inputs
       if (name != null && name.trim().isEmpty) {
         print('Validation failed: Name cannot be empty');
         return false;
@@ -77,7 +84,6 @@ class EmployerService extends BaseService<AuthModel> {
         return false;
       }
 
-      // Check if current user is admin
       final currentUser = client.auth.currentUser!;
       final roleResponse = await client
           .from('user_roles')
@@ -100,6 +106,8 @@ class EmployerService extends BaseService<AuthModel> {
       if (role == 'employer') {
         if (contact != null) updates['contact'] = contact.trim();
         if (details != null) updates['details'] = details.trim();
+        if (startDate != null) updates['start_date'] = startDate.toIso8601String();
+        if (employmentStatus != null) updates['employment_status'] = employmentStatus.value;
       }
 
       if (photo != null) {
@@ -164,7 +172,7 @@ class EmployerService extends BaseService<AuthModel> {
       final response = await client
           .from('users')
           .select(
-              'id, name, employer(contact, details, photo), roles:user_roles(*, app_role(*))')
+              'id, name, employer(contact, details, photo, start_date, employment_status), roles:user_roles(*, app_role(*))')
           .eq('id', user.id)
           .single();
 
@@ -206,7 +214,6 @@ class EmployerService extends BaseService<AuthModel> {
 
   Future<bool> deleteUserData(String role, String userId) async {
     try {
-      // Check if current user is admin
       final currentUser = client.auth.currentUser!;
       final roleResponse = await client
           .from('user_roles')
@@ -218,7 +225,6 @@ class EmployerService extends BaseService<AuthModel> {
         return false;
       }
 
-      // Fetch photo URL
       final response = await client
           .from(role)
           .select('photo')
@@ -227,12 +233,10 @@ class EmployerService extends BaseService<AuthModel> {
 
       final photoUrl = response?['photo'] as String?;
 
-      // Delete user data
       await client.from(role).delete().eq('id', userId);
       await client.from('users').delete().eq('id', userId);
       await client.from('user_roles').delete().eq('user_id', userId);
 
-      // Delete photo from storage
       if (photoUrl != null && photoUrl.isNotEmpty) {
         final path = _extractStoragePath(photoUrl);
         try {
@@ -270,54 +274,63 @@ class EmployerService extends BaseService<AuthModel> {
     required String name,
     String? contact,
     String? details,
-    XFile? photo,
+    DateTime? startDate,
+    EmploymentStatus? employmentStatus,
   }) async {
     try {
       final currentUser = client.auth.currentUser!;
       final roleResponse = await client
           .from('user_roles')
-          .select('app_role(id)')
+          .select('role_id')
           .eq('user_id', currentUser.id)
           .single();
-      if (roleResponse['app_role']['id'] != 'admin') {
+      if (roleResponse['role_id'] != 'admin') {
         print('Non autorisé : seuls les admins peuvent créer des employés');
         return false;
       }
 
-      // Créer un nouvel utilisateur
-      final authResponse =
-          await client.auth.signUp(email: email, password: password);
-      if (authResponse.user == null) {
-        print('Échec de la création du compte utilisateur');
+      final session = client.auth.currentSession;
+      if (session == null) {
+        print('No session found for the current user');
+        return false;
+      }
+      final accessToken = session.accessToken;
+
+      final apiFetcher = ApiFetcher(accessToken: accessToken);
+
+      final fields = {
+        'email': email,
+        'password': password,
+        'name': name,
+        'contact': contact,
+        'details': details,
+        'start_date': startDate?.toIso8601String(),
+        'employment_status': employmentStatus?.value ?? EmploymentStatus.active.value,
+        'roles': ['employer'],
+      };
+
+      final response = await apiFetcher.post('user', fields);
+
+      if (!response.isSuccess) {
+        print('Failed to create user via API: ${response.error}');
         return false;
       }
 
-      final userId = authResponse.user!.id;
-
-      // Insérer dans la table users
-      await client.from('users').insert({'id': userId, 'name': name});
-
-      // Insérer dans la table employer
-      final updates = {'id': userId};
-      if (contact != null) updates['contact'] = contact.trim();
-      if (details != null) updates['details'] = details.trim();
-      await client.from('employer').insert(updates);
-
-      // Télécharger la photo si fournie
-      if (photo != null) {
-        final photoPath =
-            'employer/$userId/${DateTime.now().millisecondsSinceEpoch}.jpg';
-        final photoUrl = await _uploadPhoto(photo, photoPath);
-        await client
-            .from('employer')
-            .update({'photo': photoUrl}).eq('id', userId);
+      final responseData = response.data as Map<String, dynamic>;
+      if (!responseData['success']) {
+        print('API response error: ${responseData['error']}');
+        return false;
       }
 
-      // Assigner le rôle employer
+      final userId = responseData['user']?['user']?['id'] as String?;
+      if (userId == null) {
+        print('User created but no ID returned');
+        return false;
+      }
+
       await client.from('user_roles').insert({
         'user_id': userId,
         'role_id': 'employer',
-        'app_role': {'id': 'employer'}
       });
 
       print('Employé créé : $userId');

@@ -6,8 +6,10 @@ import 'package:frontend/services/auth_service.dart';
 import 'package:frontend/uttils/navigator.dart';
 import 'package:provider/provider.dart';
 import '../controller_provider/auth_provider.dart';
+import '../controller_provider/employee_management_controller.dart';
 import '../controller_provider/locale_provider.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -291,116 +293,6 @@ class _HomePageBodyState extends State<_HomePageBody>
   }
 }
 
-// Employee Management Controller
-class EmployeeManagementController extends ChangeNotifier {
-  final EmployerService _service = EmployerService();
-
-  List<Employer> employees = [];
-  bool loading = false;
-  String? error;
-
-  Future<void> loadEmployees() async {
-    loading = true;
-    error = null;
-    notifyListeners();
-
-    try {
-      employees = await _service.getAllEmployees();
-      loading = false;
-      notifyListeners();
-    } catch (e) {
-      error = 'Échec du chargement des employés : $e';
-      loading = false;
-      notifyListeners();
-    }
-  }
-
-  Future<void> createEmployee({
-    required String name,
-    required String email,
-    required String password,
-    String? contact,
-    String? details,
-    XFile? photo,
-  }) async {
-    loading = true;
-    error = null;
-    notifyListeners();
-
-    try {
-      final success = await _service.createEmployee(
-        name: name,
-        email: email,
-        password: password,
-        contact: contact,
-        details: details,
-        photo: photo,
-      );
-      if (success) {
-        await loadEmployees();
-      } else {
-        throw Exception('Échec de la création');
-      }
-    } catch (e) {
-      error = 'Échec de la création de l\'employé : $e';
-      loading = false;
-      notifyListeners();
-    }
-  }
-
-  Future<void> updateEmployee({
-    required String id,
-    String? name,
-    String? contact,
-    String? details,
-    XFile? photo,
-  }) async {
-    loading = true;
-    error = null;
-    notifyListeners();
-
-    try {
-      final success = await _service.updateUser(
-        userId: id,
-        role: 'employer',
-        name: name,
-        contact: contact,
-        details: details,
-        photo: photo,
-      );
-      if (success) {
-        await loadEmployees();
-      } else {
-        throw Exception('Échec de la mise à jour');
-      }
-    } catch (e) {
-      error = 'Échec de la mise à jour de l\'employé : $e';
-      loading = false;
-      notifyListeners();
-    }
-  }
-
-  Future<void> deleteEmployee(String id) async {
-    loading = true;
-    error = null;
-    notifyListeners();
-
-    try {
-      final success = await _service.deleteUserData('employer', id);
-      if (success) {
-        await loadEmployees();
-      } else {
-        throw Exception('Échec de la suppression');
-      }
-    } catch (e) {
-      error = 'Échec de la suppression de l\'employé : $e';
-      loading = false;
-      notifyListeners();
-    }
-  }
-}
-
-// Employee Management View
 class EmployeeManagementView extends StatefulWidget {
   const EmployeeManagementView({super.key});
 
@@ -505,22 +397,28 @@ class _EmployeeManagementViewState extends State<EmployeeManagementView> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(employee.name ?? appLocalizations.employee_details),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (employee.photo != null && employee.photo!.isNotEmpty)
-              Center(
-                child: CircleAvatar(
-                  radius: 40,
-                  backgroundImage: NetworkImage(employee.photo!),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (employee.photo != null && employee.photo!.isNotEmpty)
+                Center(
+                  child: CircleAvatar(
+                    radius: 40,
+                    backgroundImage: NetworkImage(employee.photo!),
+                  ),
                 ),
-              ),
-            const SizedBox(height: 16),
-            Text('${appLocalizations.name}: ${employee.name ?? 'N/A'}'),
-            Text('${appLocalizations.contact}: ${employee.contact ?? 'N/A'}'),
-            Text("${appLocalizations.details}: ${employee.details ?? 'N/A'}"),
-          ],
+              const SizedBox(height: 16),
+              Text('${appLocalizations.name}: ${employee.name ?? 'N/A'}'),
+              Text('${appLocalizations.contact}: ${employee.contact ?? 'N/A'}'),
+              Text("${appLocalizations.details}: ${employee.details ?? 'N/A'}"),
+              Text(
+                  "${'start_date'}: ${employee.startDate != null ? DateFormat.yMMMd().format(employee.startDate!) : 'N/A'}"),
+              Text(
+                  "${'employment_status'}: ${employee.employmentStatus?.value ?? 'N/A'}"),
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -533,9 +431,10 @@ class _EmployeeManagementViewState extends State<EmployeeManagementView> {
   }
 
   void _showCreateEmployeeDialog(BuildContext context) {
+    final controller = context.read<EmployeeManagementController>();
     showDialog(
       context: context,
-      builder: (context) => const CreateEmployeeDialog(),
+      builder: (context) => CreateEmployeeDialog(controller: controller),
     );
   }
 
@@ -576,9 +475,10 @@ class _EmployeeManagementViewState extends State<EmployeeManagementView> {
   }
 }
 
-// Create Employee Dialog
 class CreateEmployeeDialog extends StatefulWidget {
-  const CreateEmployeeDialog({super.key});
+  final EmployeeManagementController controller;
+
+  const CreateEmployeeDialog({super.key, required this.controller});
 
   @override
   State<CreateEmployeeDialog> createState() => _CreateEmployeeDialogState();
@@ -592,6 +492,8 @@ class _CreateEmployeeDialogState extends State<CreateEmployeeDialog> {
   final _contactController = TextEditingController();
   final _detailsController = TextEditingController();
   XFile? _photo;
+  DateTime? _startDate;
+  EmploymentStatus? _employmentStatus;
 
   @override
   void dispose() {
@@ -609,6 +511,20 @@ class _CreateEmployeeDialogState extends State<CreateEmployeeDialog> {
     if (pickedFile != null) {
       setState(() {
         _photo = pickedFile;
+      });
+    }
+  }
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null && picked != _startDate) {
+      setState(() {
+        _startDate = picked;
       });
     }
   }
@@ -688,6 +604,46 @@ class _CreateEmployeeDialogState extends State<CreateEmployeeDialog> {
                 maxLines: 3,
               ),
               const SizedBox(height: 16),
+              TextFormField(
+                readOnly: true,
+                decoration: InputDecoration(
+                  labelText: 'start_date',
+                  hintText: _startDate == null
+                      ? 'Select start date'
+                      : DateFormat.yMMMd().format(_startDate!),
+                ),
+                onTap: () => _selectDate(context),
+                validator: (value) {
+                  if (_startDate == null) {
+                    return 'Start date is required';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<EmploymentStatus>(
+                value: _employmentStatus,
+                decoration:
+                    InputDecoration(labelText: 'employment_status'),
+                items: EmploymentStatus.values.map((status) {
+                  return DropdownMenuItem(
+                    value: status,
+                    child: Text(status.value),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _employmentStatus = value;
+                  });
+                },
+                validator: (value) {
+                  if (value == null) {
+                    return 'Employment status is required';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
               Row(
                 children: [
                   ElevatedButton(
@@ -710,18 +666,19 @@ class _CreateEmployeeDialogState extends State<CreateEmployeeDialog> {
         ElevatedButton(
           onPressed: () async {
             if (_formKey.currentState!.validate()) {
-              await context.read<EmployeeManagementController>().createEmployee(
-                    name: _nameController.text,
-                    email: _emailController.text,
-                    password: _passwordController.text,
-                    contact: _contactController.text.isEmpty
-                        ? null
-                        : _contactController.text,
-                    details: _detailsController.text.isEmpty
-                        ? null
-                        : _detailsController.text,
-                    photo: _photo,
-                  );
+              await widget.controller.createEmployee(
+                name: _nameController.text,
+                email: _emailController.text,
+                password: _passwordController.text,
+                contact: _contactController.text.isEmpty
+                    ? null
+                    : _contactController.text,
+                details: _detailsController.text.isEmpty
+                    ? null
+                    : _detailsController.text,
+                startDate: _startDate,
+                employmentStatus: _employmentStatus,
+              );
               if (context.mounted) Navigator.of(context).pop();
             }
           },
@@ -732,7 +689,6 @@ class _CreateEmployeeDialogState extends State<CreateEmployeeDialog> {
   }
 }
 
-// Edit Employee Dialog
 class EditEmployeeDialog extends StatefulWidget {
   final Employer employee;
   final EmployeeManagementController controller;
@@ -750,6 +706,8 @@ class _EditEmployeeDialogState extends State<EditEmployeeDialog> {
   late TextEditingController _contactController;
   late TextEditingController _detailsController;
   XFile? _photo;
+  DateTime? _startDate;
+  EmploymentStatus? _employmentStatus;
 
   @override
   void initState() {
@@ -757,6 +715,8 @@ class _EditEmployeeDialogState extends State<EditEmployeeDialog> {
     _nameController = TextEditingController(text: widget.employee.name);
     _contactController = TextEditingController(text: widget.employee.contact);
     _detailsController = TextEditingController(text: widget.employee.details);
+    _startDate = widget.employee.startDate;
+    _employmentStatus = widget.employee.employmentStatus;
   }
 
   @override
@@ -773,6 +733,20 @@ class _EditEmployeeDialogState extends State<EditEmployeeDialog> {
     if (pickedFile != null) {
       setState(() {
         _photo = pickedFile;
+      });
+    }
+  }
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _startDate ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null && picked != _startDate) {
+      setState(() {
+        _startDate = picked;
       });
     }
   }
@@ -829,6 +803,46 @@ class _EditEmployeeDialogState extends State<EditEmployeeDialog> {
                 maxLines: 3,
               ),
               const SizedBox(height: 16),
+              TextFormField(
+                readOnly: true,
+                decoration: InputDecoration(
+                  labelText: 'start_date',
+                  hintText: _startDate == null
+                      ? 'Select start date'
+                      : DateFormat.yMMMd().format(_startDate!),
+                ),
+                onTap: () => _selectDate(context),
+                validator: (value) {
+                  if (_startDate == null) {
+                    return 'Start date is required';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<EmploymentStatus>(
+                value: _employmentStatus,
+                decoration:
+                    InputDecoration(labelText: 'employment_status'),
+                items: EmploymentStatus.values.map((status) {
+                  return DropdownMenuItem(
+                    value: status,
+                    child: Text(status.value),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _employmentStatus = value;
+                  });
+                },
+                validator: (value) {
+                  if (value == null) {
+                    return 'Employment status is required';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
               Row(
                 children: [
                   ElevatedButton(
@@ -861,6 +875,8 @@ class _EditEmployeeDialogState extends State<EditEmployeeDialog> {
                     ? null
                     : _detailsController.text,
                 photo: _photo,
+                startDate: _startDate,
+                employmentStatus: _employmentStatus,
               );
               if (context.mounted) Navigator.of(context).pop();
             }

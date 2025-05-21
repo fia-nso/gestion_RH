@@ -94,6 +94,7 @@
 
 import { Elysia, t } from "elysia";
 import { createClient } from "@supabase/supabase-js";
+
 // import { jwt } from '@elysiajs/jwt';
 // import { staticPlugin } from '@elysiajs/static';
 
@@ -111,7 +112,7 @@ interface SupabaseUser {
     name?: string;
     contact?: string;
     details?: string;
-    photo?: string;
+    // photo?: string;
     roles?: string[];
     [key: string]: any;
   };
@@ -170,7 +171,7 @@ app.post(
 app.post(
   "/user",
   async ({ body, headers }) => {
-    const { email, password, name, contact, details, photo, roles } = body;
+    const { email, password, name, contact, details, roles } = body;
 
     // Get current user info from Authorization header
     const token = headers.authorization?.replace("Bearer ", "");
@@ -202,7 +203,7 @@ app.post(
         {
           email,
           password,
-          user_metadata: { name, contact, details, photo, roles },
+          user_metadata: { name, contact, details, roles },
           email_confirm: true,
         }
       );
@@ -215,7 +216,7 @@ app.post(
       const nameuser = createdUser.user?.user_metadata.name;
       const cntct = createdUser.user?.user_metadata.contact;
       const dtls = createdUser.user?.user_metadata.details;
-      const pht = createdUser.user?.user_metadata.photo;
+      // const pht = createdUser.user?.user_metadata.photo;
 
       if (!userId) {
         return { success: false, error: "User created but no ID returned" };
@@ -238,7 +239,7 @@ app.post(
             id: userId,
             contact: cntct,
             details: dtls,
-            photo: photo,
+            // photo: photo,
           });
           break;
 
@@ -279,7 +280,7 @@ app.post(
       name: t.String(),
       contact: t.Optional(t.String()),
       details: t.Optional(t.String()),
-      photo: t.Optional(t.File()),
+      // photo: t.Optional(t.File()),
       roles: t.Array(t.String()),
     }),
   }

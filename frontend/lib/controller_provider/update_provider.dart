@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:frontend/models/auth_model.dart';
+// import 'package:frontend/models/auth_model.dart';
 import 'package:frontend/services/auth_service.dart';
 import 'package:provider/provider.dart';
 import 'package:frontend/controller_provider/auth_provider.dart';
