@@ -59,11 +59,6 @@ class _HomePageBodyState extends State<_HomePageBody>
     final localeController = Provider.of<LocaleProvider>(context);
     final authController = context.watch<AuthController>();
     final userRole = authController.user.currentRole.id;
-    final userName = authController.user is Employer
-        ? (authController.user as Employer).name
-        : authController.user is Admin
-            ? (authController.user as Admin).name
-            : (authController.user as Assistant).name;
 
     List<Tab> tabs = [];
     List<Widget> tabViews = [];
@@ -362,8 +357,10 @@ class _EmployeeManagementViewState extends State<EmployeeManagementView> {
                                     _showEditEmployeeDialog(context, employee);
                                     break;
                                   case 'delete':
+                                    final controller = context.read<
+                                        EmployeeManagementController>(); // Access the controller here
                                     _showDeleteEmployeeDialog(
-                                        context, employee);
+                                        context, employee, controller);
                                     break;
                                 }
                               },
@@ -447,25 +444,24 @@ class _EmployeeManagementViewState extends State<EmployeeManagementView> {
     );
   }
 
-  void _showDeleteEmployeeDialog(BuildContext context, Employer employee) {
+  void _showDeleteEmployeeDialog(BuildContext context, Employer employee,
+      EmployeeManagementController controller) {
     final appLocalizations = AppLocalizations.of(context)!;
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: Text(appLocalizations.delete_employee),
         content: Text(
             "${appLocalizations.confirm_delete_employee} ${employee.name}"),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: Text(appLocalizations.cancel),
           ),
           TextButton(
             onPressed: () async {
-              Navigator.of(context).pop();
-              await context
-                  .read<EmployeeManagementController>()
-                  .deleteEmployee(employee.id);
+              Navigator.of(dialogContext).pop();
+              await controller.deleteEmployee(employee.id);
             },
             child: Text(appLocalizations.delete),
           ),
@@ -623,8 +619,7 @@ class _CreateEmployeeDialogState extends State<CreateEmployeeDialog> {
               const SizedBox(height: 16),
               DropdownButtonFormField<EmploymentStatus>(
                 value: _employmentStatus,
-                decoration:
-                    InputDecoration(labelText: 'employment_status'),
+                decoration: InputDecoration(labelText: 'employment_status'),
                 items: EmploymentStatus.values.map((status) {
                   return DropdownMenuItem(
                     value: status,
@@ -822,8 +817,7 @@ class _EditEmployeeDialogState extends State<EditEmployeeDialog> {
               const SizedBox(height: 16),
               DropdownButtonFormField<EmploymentStatus>(
                 value: _employmentStatus,
-                decoration:
-                    InputDecoration(labelText: 'employment_status'),
+                decoration: InputDecoration(labelText: 'employment_status'),
                 items: EmploymentStatus.values.map((status) {
                   return DropdownMenuItem(
                     value: status,
