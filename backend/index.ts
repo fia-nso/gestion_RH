@@ -94,7 +94,7 @@
 
 import { Elysia, t } from "elysia";
 import { createClient } from "@supabase/supabase-js";
-
+import { cors } from "@elysiajs/cors";
 // import { jwt } from '@elysiajs/jwt';
 // import { staticPlugin } from '@elysiajs/static';
 
@@ -128,6 +128,15 @@ interface SupabaseUser {
 
 // Initialize app with custom context
 const app = new Elysia();
+// allow cors
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  })
+);
 
 //  Login
 app.post(
@@ -302,8 +311,10 @@ app
         email: t.String(),
         password: t.String(),
         name: t.String(),
-        contact: t.Optional(t.String()),
-        details: t.Optional(t.String()),
+        contact: t.Nullable(t.String()),
+        details: t.Nullable(t.String()),
+        start_date: t.String(),
+        employment_status: t.String(),
         // photo: t.Optional(t.File()),
         roles: t.Array(t.String()),
       }),
@@ -463,7 +474,7 @@ app
   //         };
   //       }
 
-  //       // 3. Mise à jour user_metadata **seulement si l’admin modifie son propre compte**
+  //       // 3. Mise à jour user_metadata **seulement si l'admin modifie son propre compte**
   //       if (user.id === params.id) {
   //         const { error: metaError } = await supabaseClient.auth.updateUser({
   //           data: updateData,
