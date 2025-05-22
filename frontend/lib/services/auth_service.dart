@@ -37,7 +37,8 @@ class EmployerService extends BaseService<AuthModel> {
       final response = await client.from('users').select('''
           id,
           name,
-          employer!left(contact, details, photo, start_date, employment_status),
+          status,
+          employer!left(contact, details, photo, start_date),
           roles:user_roles(*, app_role!inner(id))
         ''').inFilter('id', userIds);
 
@@ -72,9 +73,11 @@ class EmployerService extends BaseService<AuthModel> {
     String? details,
     XFile? photo,
     DateTime? startDate,
-    EmploymentStatus? employmentStatus,
+    Status? status,
+    String? email,
   }) async {
     try {
+      // Validate inputs
       if (name != null && name.trim().isEmpty) {
         print('Validation failed: Name cannot be empty');
         return false;
@@ -83,45 +86,78 @@ class EmployerService extends BaseService<AuthModel> {
         print('Validation failed: Invalid contact format');
         return false;
       }
+      if (email != null &&
+          !RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
+        print('Validation failed: Invalid email format');
+        return false;
+      }
 
+      // Get current user and their role
       final currentUser = client.auth.currentUser!;
       final roleResponse = await client
           .from('user_roles')
           .select('app_role(id)')
           .eq('user_id', currentUser.id)
           .single();
-      if (roleResponse['app_role']['id'] != 'admin') {
-        print('Unauthorized: Only admins can update employees');
+      final userRole = roleResponse['app_role']['id'];
+      final isAdmin = userRole == 'admin';
+      final isSelf = currentUser.id == userId;
+
+      // Autoriser la mise à jour si l'utilisateur est admin ou s'il met à jour son propre profil
+      if (!isAdmin && !isSelf) {
+        print(
+            'Unauthorized: Only admins or the user themselves can update this profile');
+        return false;
+      }
+      if (!isAdmin && (startDate != null || status != null)) {
+        print('Unauthorized: Only admins can update start_date or status');
         return false;
       }
 
-      final updates = <String, dynamic>{};
+      // Prepare updates for each table
+      final userUpdates = <String, dynamic>{};
+      final employerUpdates = <String, dynamic>{};
+      String? photoUrl;
 
-      if (name != null) {
-        await client
-            .from(AuthModel.usersTableName)
-            .update({"name": name.trim()}).eq('id', userId);
+      // Update auth.users (email and user_metadata.name)
+      if ((email != null || name != null) && isSelf) {
+        final attributes = UserAttributes(
+          email: email?.trim(),
+          data: name != null ? {'name': name.trim()} : null,
+        );
+        await client.auth.updateUser(attributes);
       }
 
+      // Update public.users (name and status)
+      if (name != null) userUpdates['name'] = name.trim();
+      if (status != null && isAdmin) userUpdates['status'] = status.value;
+
+      // Update public.employer (employer-specific fields)
       if (role == 'employer') {
-        if (contact != null) updates['contact'] = contact.trim();
-        if (details != null) updates['details'] = details.trim();
-        if (startDate != null) updates['start_date'] = startDate.toIso8601String();
-        if (employmentStatus != null) updates['employment_status'] = employmentStatus.value;
+        if (contact != null) employerUpdates['contact'] = contact.trim();
+        if (details != null) employerUpdates['details'] = details.trim();
+        if (photo != null) {
+          final photoPath =
+              '$role/$userId/${DateTime.now().millisecondsSinceEpoch}.jpg';
+          photoUrl = await _uploadPhoto(photo, photoPath);
+          employerUpdates['photo'] = photoUrl;
+        }
+        if (isAdmin && startDate != null) {
+          employerUpdates['start_date'] = startDate.toIso8601String();
+        }
       }
 
-      if (photo != null) {
-        final photoPath =
-            '$role/$userId/${DateTime.now().millisecondsSinceEpoch}.jpg';
-        final photoUrl = await _uploadPhoto(photo, photoPath);
-        updates['photo'] = photoUrl;
+      // Apply updates to public.users
+      if (userUpdates.isNotEmpty) {
+        await client.from(AuthModel.usersTableName).update(userUpdates).eq('id', userId);
       }
 
-      if (updates.isNotEmpty) {
-        await client.from(role).update(updates).eq('id', userId);
+      // Apply updates to public.employer
+      if (employerUpdates.isNotEmpty) {
+        await client.from(role).update(employerUpdates).eq('id', userId);
       }
 
-      print('Updated employee: $userId');
+      print('Updated user: $userId');
       return true;
     } catch (e) {
       print("updateUser() failed: $e");
@@ -172,7 +208,7 @@ class EmployerService extends BaseService<AuthModel> {
       final response = await client
           .from('users')
           .select(
-              'id, name, employer(contact, details, photo, start_date, employment_status), roles:user_roles(*, app_role(*))')
+              'id, name, status, employer(contact, details, photo, start_date), roles:user_roles(*, app_role(*))')
           .eq('id', user.id)
           .single();
 
@@ -275,7 +311,7 @@ class EmployerService extends BaseService<AuthModel> {
     String? contact,
     String? details,
     DateTime? startDate,
-    EmploymentStatus? employmentStatus,
+    Status? status,
   }) async {
     try {
       final currentUser = client.auth.currentUser!;
@@ -302,10 +338,10 @@ class EmployerService extends BaseService<AuthModel> {
         'email': email,
         'password': password,
         'name': name,
+        'status': status?.value ?? Status.active.value,
         'contact': contact,
         'details': details,
         'start_date': startDate?.toIso8601String(),
-        'employment_status': employmentStatus?.value ?? EmploymentStatus.active.value,
         'roles': ['employer'],
       };
 

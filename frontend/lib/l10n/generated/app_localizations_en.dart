@@ -125,4 +125,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get assistant => 'Assistant';
+
+  @override
+  String get status => 'Status';
+
+  @override
+  String get status_required => 'Status is required';
+
+  @override
+  String get start_date => 'Start Date';
+
+  @override
+  String get start_date_required => 'Start date is required';
 }

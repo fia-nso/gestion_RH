@@ -38,7 +38,7 @@ class AuthController extends ChangeNotifier {
         return AppNavigator.pushReplacement('/login');
       }
 
-      final role = response.user!.userMetadata!['roles'][0];
+      // final role = response.user!.userMetadata!['roles'][0];
 
       _service = EmployerService();
 

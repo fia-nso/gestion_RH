@@ -34,7 +34,7 @@ class EmployeeManagementController extends ChangeNotifier {
     String? contact,
     String? details,
     DateTime? startDate,
-    EmploymentStatus? employmentStatus,
+    Status? status,
   }) async {
     loading = true;
     error = null;
@@ -48,7 +48,7 @@ class EmployeeManagementController extends ChangeNotifier {
         contact: contact,
         details: details,
         startDate: startDate,
-        employmentStatus: employmentStatus,
+        status: status,
       );
       if (success) {
         await loadEmployees();
@@ -69,7 +69,7 @@ class EmployeeManagementController extends ChangeNotifier {
     String? details,
     XFile? photo,
     DateTime? startDate,
-    EmploymentStatus? employmentStatus,
+    Status? status,
   }) async {
     loading = true;
     error = null;
@@ -84,7 +84,7 @@ class EmployeeManagementController extends ChangeNotifier {
         details: details,
         photo: photo,
         startDate: startDate,
-        employmentStatus: employmentStatus,
+        status: status,
       );
       if (success) {
         await loadEmployees();

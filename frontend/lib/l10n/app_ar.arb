@@ -38,6 +38,10 @@
   "password": "كلمة المرور",
   "se_connecter": "تسجيل الدخول",
   "admin": "مدير",
-  "employer": "الصاحب",
-  "assistant": "مساعد"
+  "employer": "صاحب العمل",
+  "assistant": "مساعد",
+  "status": "الحالة",
+  "status_required": "الحالة مطلوبة",
+  "start_date": "تاريخ البدء",
+  "start_date_required": "تاريخ البدء مطلوب"
 }

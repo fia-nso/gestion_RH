@@ -59,6 +59,7 @@ class _HomePageBodyState extends State<_HomePageBody>
     final localeController = Provider.of<LocaleProvider>(context);
     final authController = context.watch<AuthController>();
     final userRole = authController.user.currentRole.id;
+    final userName = authController.user.name;
 
     List<Tab> tabs = [];
     List<Widget> tabViews = [];
@@ -202,6 +203,11 @@ class _HomePageBodyState extends State<_HomePageBody>
                         ),
                       ),
                       const SizedBox(height: 20),
+                      Text(
+                        '${AppLocalizations.of(context)!.status}: ${employer.status ?? 'N/A'}',
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                      const SizedBox(height: 20),
                       controller.loading
                           ? const CircularProgressIndicator()
                           : ElevatedButton(
@@ -227,9 +233,8 @@ class _HomePageBodyState extends State<_HomePageBody>
 
   Widget _buildGenericProfile(
       BuildContext context, AuthController authController, String userRole) {
-    final userName = userRole == 'admin'
-        ? (authController.user as Admin).name
-        : (authController.user as Assistant).name;
+    final userName = authController.user.name;
+    final userStatus = authController.user.status;
 
     return Center(
       child: Column(
@@ -249,6 +254,11 @@ class _HomePageBodyState extends State<_HomePageBody>
           const SizedBox(height: 20),
           Text(
             'Rôle : ${userRole.toUpperCase()}',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 20),
+          Text(
+            '${AppLocalizations.of(context)!.status}: ${userStatus ?? 'N/A'}',
             style: Theme.of(context).textTheme.titleMedium,
           ),
         ],
@@ -274,8 +284,8 @@ class _HomePageBodyState extends State<_HomePageBody>
             TextButton(
               child: Text(AppLocalizations.of(context)!.logout),
               onPressed: () async {
-                Navigator.of(context).pop();
                 await EmployerService().signOut();
+                Navigator.of(context).pop();
                 if (context.mounted) {
                   AppNavigator.pushReplacement('/login');
                 }
@@ -357,10 +367,8 @@ class _EmployeeManagementViewState extends State<EmployeeManagementView> {
                                     _showEditEmployeeDialog(context, employee);
                                     break;
                                   case 'delete':
-                                    final controller = context.read<
-                                        EmployeeManagementController>(); // Access the controller here
                                     _showDeleteEmployeeDialog(
-                                        context, employee, controller);
+                                        context, employee);
                                     break;
                                 }
                               },
@@ -409,11 +417,10 @@ class _EmployeeManagementViewState extends State<EmployeeManagementView> {
               const SizedBox(height: 16),
               Text('${appLocalizations.name}: ${employee.name ?? 'N/A'}'),
               Text('${appLocalizations.contact}: ${employee.contact ?? 'N/A'}'),
-              Text("${appLocalizations.details}: ${employee.details ?? 'N/A'}"),
+              Text('${appLocalizations.details}: ${employee.details ?? 'N/A'}'),
               Text(
-                  "${'start_date'}: ${employee.startDate != null ? DateFormat.yMMMd().format(employee.startDate!) : 'N/A'}"),
-              Text(
-                  "${'employment_status'}: ${employee.employmentStatus?.value ?? 'N/A'}"),
+                  '${'start_date'}: ${employee.startDate != null ? DateFormat.yMMMd().format(employee.startDate!) : 'N/A'}'),
+              Text('${appLocalizations.status}: ${employee.status ?? 'N/A'}'),
             ],
           ),
         ),
@@ -444,24 +451,25 @@ class _EmployeeManagementViewState extends State<EmployeeManagementView> {
     );
   }
 
-  void _showDeleteEmployeeDialog(BuildContext context, Employer employee,
-      EmployeeManagementController controller) {
+  void _showDeleteEmployeeDialog(BuildContext context, Employer employee) {
     final appLocalizations = AppLocalizations.of(context)!;
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
+      builder: (context) => AlertDialog(
         title: Text(appLocalizations.delete_employee),
         content: Text(
-            "${appLocalizations.confirm_delete_employee} ${employee.name}"),
+            '${appLocalizations.confirm_delete_employee} ${employee.name}'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
+            onPressed: () => Navigator.of(context).pop(),
             child: Text(appLocalizations.cancel),
           ),
           TextButton(
             onPressed: () async {
-              Navigator.of(dialogContext).pop();
-              await controller.deleteEmployee(employee.id);
+              Navigator.of(context).pop();
+              await context
+                  .read<EmployeeManagementController>()
+                  .deleteEmployee(employee.id);
             },
             child: Text(appLocalizations.delete),
           ),
@@ -489,7 +497,7 @@ class _CreateEmployeeDialogState extends State<CreateEmployeeDialog> {
   final _detailsController = TextEditingController();
   XFile? _photo;
   DateTime? _startDate;
-  EmploymentStatus? _employmentStatus;
+  Status? _status;
 
   @override
   void dispose() {
@@ -611,16 +619,16 @@ class _CreateEmployeeDialogState extends State<CreateEmployeeDialog> {
                 onTap: () => _selectDate(context),
                 validator: (value) {
                   if (_startDate == null) {
-                    return 'Start date is required';
+                    return appLocalizations.start_date_required;
                   }
                   return null;
                 },
               ),
               const SizedBox(height: 16),
-              DropdownButtonFormField<EmploymentStatus>(
-                value: _employmentStatus,
-                decoration: InputDecoration(labelText: 'employment_status'),
-                items: EmploymentStatus.values.map((status) {
+              DropdownButtonFormField<Status>(
+                value: _status,
+                decoration: InputDecoration(labelText: appLocalizations.status),
+                items: Status.values.map((status) {
                   return DropdownMenuItem(
                     value: status,
                     child: Text(status.value),
@@ -628,12 +636,12 @@ class _CreateEmployeeDialogState extends State<CreateEmployeeDialog> {
                 }).toList(),
                 onChanged: (value) {
                   setState(() {
-                    _employmentStatus = value;
+                    _status = value;
                   });
                 },
                 validator: (value) {
                   if (value == null) {
-                    return 'Employment status is required';
+                    return appLocalizations.status_required;
                   }
                   return null;
                 },
@@ -672,7 +680,7 @@ class _CreateEmployeeDialogState extends State<CreateEmployeeDialog> {
                     ? null
                     : _detailsController.text,
                 startDate: _startDate,
-                employmentStatus: _employmentStatus,
+                status: _status,
               );
               if (context.mounted) Navigator.of(context).pop();
             }
@@ -702,7 +710,7 @@ class _EditEmployeeDialogState extends State<EditEmployeeDialog> {
   late TextEditingController _detailsController;
   XFile? _photo;
   DateTime? _startDate;
-  EmploymentStatus? _employmentStatus;
+  Status? _status;
 
   @override
   void initState() {
@@ -711,7 +719,9 @@ class _EditEmployeeDialogState extends State<EditEmployeeDialog> {
     _contactController = TextEditingController(text: widget.employee.contact);
     _detailsController = TextEditingController(text: widget.employee.details);
     _startDate = widget.employee.startDate;
-    _employmentStatus = widget.employee.employmentStatus;
+    _status = widget.employee.status != null
+        ? Status.fromString(widget.employee.status!)
+        : null;
   }
 
   @override
@@ -809,16 +819,16 @@ class _EditEmployeeDialogState extends State<EditEmployeeDialog> {
                 onTap: () => _selectDate(context),
                 validator: (value) {
                   if (_startDate == null) {
-                    return 'Start date is required';
+                    return appLocalizations.start_date_required;
                   }
                   return null;
                 },
               ),
               const SizedBox(height: 16),
-              DropdownButtonFormField<EmploymentStatus>(
-                value: _employmentStatus,
-                decoration: InputDecoration(labelText: 'employment_status'),
-                items: EmploymentStatus.values.map((status) {
+              DropdownButtonFormField<Status>(
+                value: _status,
+                decoration: InputDecoration(labelText: appLocalizations.status),
+                items: Status.values.map((status) {
                   return DropdownMenuItem(
                     value: status,
                     child: Text(status.value),
@@ -826,12 +836,12 @@ class _EditEmployeeDialogState extends State<EditEmployeeDialog> {
                 }).toList(),
                 onChanged: (value) {
                   setState(() {
-                    _employmentStatus = value;
+                    _status = value;
                   });
                 },
                 validator: (value) {
                   if (value == null) {
-                    return 'Employment status is required';
+                    return appLocalizations.status_required;
                   }
                   return null;
                 },
@@ -870,7 +880,7 @@ class _EditEmployeeDialogState extends State<EditEmployeeDialog> {
                     : _detailsController.text,
                 photo: _photo,
                 startDate: _startDate,
-                employmentStatus: _employmentStatus,
+                status: _status,
               );
               if (context.mounted) Navigator.of(context).pop();
             }

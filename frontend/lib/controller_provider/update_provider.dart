@@ -49,37 +49,48 @@ class EmployerUpdateController extends ChangeNotifier {
     }
   }
 
-  Future<void> save(BuildContext context) async {
-    loading = true;
-    error = null;
-    notifyListeners();
+  Future<bool> save(BuildContext context) async {
+  loading = true;
+  error = null;
+  notifyListeners();
 
-    try {
-      final authController =
-          Provider.of<AuthController>(context, listen: false);
-      final role = authController.user.currentRole.id;
-      final userId = authController.user.id;
+  try {
+    final authController =
+        Provider.of<AuthController>(context, listen: false);
+    final role = authController.user.currentRole.id;
+    final userId = authController.user.id;
 
-      final success = await EmployerService().updateUser(
-        userId: userId,
-        role: role,
-        name: nameController.text.trim(),
-        contact: role == 'employer' ? contactController.text.trim() : null,
-        details: role == 'employer' ? detailsController.text.trim() : null,
-        photo: photo,
-      );
+    final success = await EmployerService().updateUser(
+      userId: userId,
+      role: role,
+      name: nameController.text.trim(),
+      contact: role == 'employer' ? contactController.text.trim() : null,
+      details: role == 'employer' ? detailsController.text.trim() : null,
+      photo: photo,
+    );
 
-      if (success) {
-        await authController.getUser();
-      } else {
-        error = 'Échec de la mise à jour du profil';
-      }
-    } catch (e) {
-      error = 'Erreur lors de la mise à jour du profil : $e';
-      print('Erreur de sauvegarde : $e');
+    if (success) {
+      await authController.getUser();
+      loading = false;
+      notifyListeners();
+      return true;
+    } else {
+      error = 'Échec de la mise à jour du profil';
     }
+  } catch (e) {
+    error = 'Erreur lors de la mise à jour du profil : $e';
+    print('Erreur de sauvegarde : $e');
+  }
 
-    loading = false;
+  loading = false;
+  notifyListeners();
+  return false;
+}
+
+
+  bool editing = false;
+  void toggleEditing() {
+    editing = !editing;
     notifyListeners();
   }
 

@@ -334,6 +334,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Assistant'**
   String get assistant;
+
+  /// No description provided for @status.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get status;
+
+  /// No description provided for @status_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Status is required'**
+  String get status_required;
+
+  /// No description provided for @start_date.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Date'**
+  String get start_date;
+
+  /// No description provided for @start_date_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Start date is required'**
+  String get start_date_required;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

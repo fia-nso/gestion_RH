@@ -121,8 +121,20 @@ class AppLocalizationsAr extends AppLocalizations {
   String get admin => 'مدير';
 
   @override
-  String get employer => 'الصاحب';
+  String get employer => 'صاحب العمل';
 
   @override
   String get assistant => 'مساعد';
+
+  @override
+  String get status => 'الحالة';
+
+  @override
+  String get status_required => 'الحالة مطلوبة';
+
+  @override
+  String get start_date => 'تاريخ البدء';
+
+  @override
+  String get start_date_required => 'تاريخ البدء مطلوب';
 }

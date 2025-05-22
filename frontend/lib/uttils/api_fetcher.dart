@@ -157,38 +157,39 @@
 //   bool get isSuccess => status >= 200 && status < 300;
 // }
 
-
-
-
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:dio/browser.dart';
+import 'package:dio/dio.dart';
 
 class ApiFetcher {
-  final String baseUrl = "http://127.0.0.1:3000"; // Replace with your actual URL
+  final String baseUrl = "https://02cf-41-188-117-99.ngrok-free.app";
   String? accessToken;
   String? refreshToken;
 
   ApiFetcher({this.accessToken, this.refreshToken});
 
   Future<FetcherResponse> get(String path) async {
-    final url = Uri.parse('$baseUrl/$path');
+    final dio = Dio();
+
+    dio
+      ..httpClientAdapter = BrowserHttpClientAdapter()
+      ..options.baseUrl = baseUrl
+      ..options.headers = {
+        'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'aby',
+        if (accessToken != null) 'Authorization': 'Bearer $accessToken',
+      };
 
     try {
-      final response = await http.get(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          if (accessToken != null) 'Authorization': 'Bearer $accessToken',
-        },
-      );
+      final response = await dio.get('/$path');
 
-      final responseBody = response.body;
+      final responseBody = response.data;
 
       return FetcherResponse(
-        status: response.statusCode,
-        url: url.toString(),
+        status: response.statusCode ?? 200,
+        url: '',
         data: _tryDecodeJson(responseBody),
-        error: response.statusCode >= 400 ? responseBody : null,
+        error: response.statusCode == 200 ? responseBody : null,
       );
     } catch (e) {
       return FetcherResponse(
@@ -200,39 +201,41 @@ class ApiFetcher {
   }
 
   Future<FetcherResponse> post(String path, Map<String, dynamic> body) async {
-  final url = Uri.parse('$baseUrl/$path');
+    final dio = Dio();
 
-  try {
-    print('Sending POST request to $url with body: $body');
-    final response = await http.post(
-      url,
-      headers: {
+    dio
+      ..httpClientAdapter = BrowserHttpClientAdapter()
+      ..options.baseUrl = baseUrl
+      ..options.headers = {
         'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'aby',
         if (accessToken != null) 'Authorization': 'Bearer $accessToken',
-      },
-      body: jsonEncode(body),
-    );
+      };
 
-    print('Received response: status ${response.statusCode}, body ${response.body}');
-    final responseBody = response.body;
-    print('Decoding response body: $responseBody');
+    try {
+      final response = await dio.post('/$path');
 
-    return FetcherResponse(
-      status: response.statusCode,
-      url: url.toString(),
-      data: _tryDecodeJson(responseBody) as dynamic,
-      error: response.statusCode >= 400 ? responseBody : null,
-    );
-  } catch (e, stackTrace) {
-    print('POST request failed: $e');
-    print('Stack trace: $stackTrace');
-    return FetcherResponse(
-      status: 0,
-      url: path,
-      error: e.toString(),
-    );
+      print(
+          'Received response: status ${response.statusCode}, body ${response.data}');
+      final responseBody = response.data;
+      print('Decoding response body: $responseBody');
+
+      return FetcherResponse(
+        status: response.statusCode ?? 400,
+        url: '',
+        data: _tryDecodeJson(responseBody) as dynamic,
+        error: response.statusCode == 200 ? responseBody : null,
+      );
+    } catch (e, stackTrace) {
+      print('POST request failed: $e');
+      print('Stack trace: $stackTrace');
+      return FetcherResponse(
+        status: 0,
+        url: path,
+        error: e.toString(),
+      );
+    }
   }
-}
 
   dynamic _tryDecodeJson(String source) {
     try {

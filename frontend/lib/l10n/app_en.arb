@@ -39,5 +39,9 @@
   "se_connecter": "Log in",
   "admin": "Admin",
   "employer": "Employer",
-  "assistant": "Assistant"
+  "assistant": "Assistant",
+  "status": "Status",
+  "status_required": "Status is required",
+  "start_date": "Start Date",
+  "start_date_required": "Start date is required"
 }
