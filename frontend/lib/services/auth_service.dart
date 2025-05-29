@@ -149,7 +149,10 @@ class EmployerService extends BaseService<AuthModel> {
 
       // Apply updates to public.users
       if (userUpdates.isNotEmpty) {
-        await client.from(AuthModel.usersTableName).update(userUpdates).eq('id', userId);
+        await client
+            .from(AuthModel.usersTableName)
+            .update(userUpdates)
+            .eq('id', userId);
       }
 
       // Apply updates to public.employer
@@ -250,6 +253,7 @@ class EmployerService extends BaseService<AuthModel> {
 
   Future<bool> deleteUserData(String role, String userId) async {
     try {
+      // Check if the current user is an admin
       final currentUser = client.auth.currentUser!;
       final roleResponse = await client
           .from('user_roles')
@@ -261,18 +265,30 @@ class EmployerService extends BaseService<AuthModel> {
         return false;
       }
 
-      final response = await client
+      // Initialize ApiFetcher with the access token
+      final apiFetcher = ApiFetcher(
+        accessToken: client.auth.currentSession?.accessToken,
+      );
+
+      // Call the DELETE endpoint
+      final response = await apiFetcher.delete('employers/$userId');
+
+      if (!response.isSuccess) {
+        print(
+            'Failed to delete user: ${response.error} (Status: ${response.status})');
+        return false;
+      }
+
+      // Fetch photo URL for storage deletion
+      final photoResponse = await client
           .from(role)
           .select('photo')
           .eq('id', userId)
           .maybeSingle();
 
-      final photoUrl = response?['photo'] as String?;
+      final photoUrl = photoResponse?['photo'] as String?;
 
-      await client.from(role).delete().eq('id', userId);
-      await client.from('users').delete().eq('id', userId);
-      await client.from('user_roles').delete().eq('user_id', userId);
-
+      // Delete file from storage if it exists
       if (photoUrl != null && photoUrl.isNotEmpty) {
         final path = _extractStoragePath(photoUrl);
         try {
@@ -348,19 +364,30 @@ class EmployerService extends BaseService<AuthModel> {
       final response = await apiFetcher.post('user', fields);
 
       if (!response.isSuccess) {
-        print('Failed to create user via API: ${response.error}');
+        print(
+            'Failed to create user via API: ${response.status} - ${response.error}');
         return false;
       }
 
       final responseData = response.data as Map<String, dynamic>;
+      print('API response data: $responseData');
+
       if (!responseData['success']) {
         print('API response error: ${responseData['error']}');
         return false;
       }
 
-      final userId = responseData['user']?['user']?['id'] as String?;
+      // Handle different response structures
+      String? userId;
+      if (responseData['user'] != null) {
+        if (responseData['user']['user'] != null) {
+          userId = responseData['user']['user']['id'] as String?;
+        } else {
+          userId = responseData['user']['id'] as String?;
+        }
+      }
       if (userId == null) {
-        print('User created but no ID returned');
+        print('User created but no ID returned. Response: $responseData');
         return false;
       }
 
@@ -377,3 +404,125 @@ class EmployerService extends BaseService<AuthModel> {
     }
   }
 }
+
+  // Future<bool> createEmployee({
+  //   required String email,
+  //   required String password,
+  //   required String name,
+  //   String? contact,
+  //   String? details,
+  //   DateTime? startDate,
+  //   Status? status,
+  // }) async {
+  //   try {
+  //     print('🔄 Début createEmployee...');
+  //     final currentUser = client.auth.currentUser!;
+  //     print('👤 Current user: ${currentUser.id}');
+
+  //     final roleResponse = await client
+  //         .from('user_roles')
+  //         .select('role_id')
+  //         .eq('user_id', currentUser.id)
+  //         .single();
+
+  //     print('🔑 User role: ${roleResponse['role_id']}');
+
+  //     if (roleResponse['role_id'] != 'admin') {
+  //       print('❌ Non autorisé : seuls les admins peuvent créer des employés');
+  //       return false;
+  //     }
+
+  //     final session = client.auth.currentSession;
+  //     if (session == null) {
+  //       print('❌ No session found for the current user');
+  //       return false;
+  //     }
+  //     final accessToken = session.accessToken;
+  //     print('🔐 Access token obtenu');
+
+  //     final apiFetcher = ApiFetcher(accessToken: accessToken);
+
+  //     final fields = {
+  //       'email': email,
+  //       'password': password,
+  //       'name': name,
+  //       'status': status?.value ?? Status.active.value,
+  //       'contact': contact,
+  //       'details': details,
+  //       'start_date': startDate?.toIso8601String(),
+  //       'roles': ['employer'],
+  //     };
+
+  //     print('📤 Envoi des données: $fields');
+
+  //     final response = await apiFetcher.post('user', fields);
+
+  //     print('📥 Response reçue:');
+  //     print('  - isSuccess: ${response.isSuccess}');
+  //     print('  - status: ${response.status}');
+  //     print('  - data: ${response.data}');
+  //     print('  - error: ${response.error}');
+
+  //     if (!response.isSuccess) {
+  //       print('❌ Failed to create user via API: ${response.error}');
+  //       return false;
+  //     }
+
+  //     // Vérification plus robuste de la réponse
+  //     final responseData = response.data;
+  //     print('🔍 Type de responseData: ${responseData.runtimeType}');
+  //     print('🔍 Contenu responseData: $responseData');
+
+  //     if (responseData is Map<String, dynamic>) {
+  //       print('✅ responseData est bien un Map');
+  //       print('🔍 Clés disponibles: ${responseData.keys.toList()}');
+
+  //       // Vérifier si 'success' existe
+  //       if (responseData.containsKey('success')) {
+  //         final success = responseData['success'];
+  //         print(
+  //             '🔍 Valeur de success: $success (type: ${success.runtimeType})');
+
+  //         if (success != true) {
+  //           print(
+  //               '❌ API response error: ${responseData['error'] ?? 'Erreur inconnue'}');
+  //           return false;
+  //         }
+  //       } else {
+  //         print('⚠️ Clé "success" non trouvée dans la réponse');
+  //         // Continuer quand même si pas d'erreur explicite
+  //       }
+
+  //       // Extraire l'ID utilisateur
+  //       final userId = responseData['user']?['user']?['id'] as String? ??
+  //           responseData['user']?['id'] as String? ??
+  //           responseData['id'] as String?;
+
+  //       print('🔍 User ID extrait: $userId');
+
+  //       if (userId == null) {
+  //         print('❌ User created but no ID returned');
+  //         print('🔍 Structure complète: $responseData');
+  //         return false;
+  //       }
+
+  //       // Ajouter le rôle
+  //       print('🔄 Ajout du rôle employer...');
+  //       await client.from('user_roles').insert({
+  //         'user_id': userId,
+  //         'role_id': 'employer',
+  //       });
+
+  //       print('✅ Employé créé avec succès : $userId');
+  //       return true;
+  //     } else {
+  //       print('❌ responseData n\'est pas un Map: ${responseData.runtimeType}');
+  //       return false;
+  //     }
+  //   } catch (e, stackTrace) {
+  //     print('💥 createEmployee() a échoué : $e');
+  //     print('📍 Stack trace: $stackTrace');
+  //     return false;
+  //   }
+  // }
+// }

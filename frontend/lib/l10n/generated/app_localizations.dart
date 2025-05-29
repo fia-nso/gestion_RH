@@ -170,7 +170,7 @@ abstract class AppLocalizations {
   /// No description provided for @no_contact.
   ///
   /// In en, this message translates to:
-  /// **'No contact'**
+  /// **'No contact information'**
   String get no_contact;
 
   /// No description provided for @edit.
@@ -296,7 +296,7 @@ abstract class AppLocalizations {
   /// No description provided for @contact.
   ///
   /// In en, this message translates to:
-  /// **'Contact'**
+  /// **'Contact Information'**
   String get contact;
 
   /// No description provided for @email.
@@ -358,6 +358,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Start date is required'**
   String get start_date_required;
+
+  /// No description provided for @leave_balance.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave Balance'**
+  String get leave_balance;
+
+  /// No description provided for @view_details.
+  ///
+  /// In en, this message translates to:
+  /// **'View Details'**
+  String get view_details;
+
+  /// No description provided for @role.
+  ///
+  /// In en, this message translates to:
+  /// **'Role'**
+  String get role;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

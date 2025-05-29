@@ -92,234 +92,296 @@
 // app.listen(3000);
 // console.log('✅ Elysia server is running on http://localhost:3000');
 
-import { Elysia, t } from "elysia";
-import { createClient } from "@supabase/supabase-js";
-import { cors } from "@elysiajs/cors";
-// import { jwt } from '@elysiajs/jwt';
-// import { staticPlugin } from '@elysiajs/static';
+  import { Elysia, t } from "elysia";
+  import { createClient } from "@supabase/supabase-js";
+  import { cors } from "@elysiajs/cors";
+  // import { jwt } from '@elysiajs/jwt';
+  // import { staticPlugin } from '@elysiajs/static';
 
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseRoleKey = process.env.SERVICEROLEKEY!;
-// const jwtSecret = process.env.JWT_SECRET!;
+  const supabaseUrl = process.env.SUPABASE_URL!;
+  const supabaseRoleKey = process.env.SERVICEROLEKEY!;
+  // const jwtSecret = process.env.JWT_SECRET!;
 
-// Supabase client
-const supabase = createClient(supabaseUrl, supabaseRoleKey);
+  // Supabase client
+  const supabase = createClient(supabaseUrl, supabaseRoleKey);
 
-// Define the Supabase user type for context
-interface SupabaseUser {
-  id: string;
-  user_metadata?: {
-    name?: string;
-    contact?: string;
-    details?: string;
-    // photo?: string;
-    roles?: string[];
+  // Define the Supabase user type for context
+  interface SupabaseUser {
+    id: string;
+    user_metadata?: {
+      name?: string;
+      contact?: string;
+      details?: string;
+      photo?: string;
+      status?: string;
+      start_date?: string;
+      roles?: string[];
+      [key: string]: any;
+    };
     [key: string]: any;
-  };
-  [key: string]: any;
-}
-
-// Extend Elysia's context to include user
-// interface CustomContext {
-//   request: {
-//     user: SupabaseUser;
-//   };
-// }
-
-// Initialize app with custom context
-const app = new Elysia();
-// allow cors
-app.use(
-  cors({
-    origin: "*",
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
-  })
-);
-
-//  Login
-app.post(
-  "/login",
-  async ({ body }) => {
-    const { email, password } = body;
-
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        if (error.message === "Email not confirmed") {
-          return {
-            success: false,
-            error: "Please confirm your email before logging in",
-          };
-        }
-        console.error("Error logging in:", error);
-        return { success: false, error: error.message, details: error };
-      }
-
-      console.log("User logged in:", data);
-      return { success: true, user: data.user, session: data.session };
-    } catch (err) {
-      console.error("Unexpected error:", err);
-      return { success: false, error: "Internal server error", details: err };
-    }
-  },
-  {
-    body: t.Object({
-      email: t.String(),
-      password: t.String(),
-    }),
   }
-);
 
-// Create user
-app
-  .post(
-    "/user",
-    async ({ body, headers }) => {
-      const { email, password, name, contact, details, roles } = body;
+  // Extend Elysia's context to include user
+  // interface CustomContext {
+  //   request: {
+  //     user: SupabaseUser;
+  //   };
+  // }
 
-      // Get current user info from Authorization header
-      const token = headers.authorization?.replace("Bearer ", "");
-      const { data: userInfo, error: userInfoError } =
-        await supabase.auth.getUser(token);
+  // Initialize app with custom context
+  const app = new Elysia();
+  // allow cors
+  app.use(
+    cors({
+      origin: "*",
+      methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization"],
+      credentials: true,
+    })
+  );
 
-      if (userInfoError || !userInfo?.user) {
-        // set.status = 401;
-        return { success: false, error: "Unauthorized" };
-      }
+  //  Login
+  app
+    .post(
+      "/login",
+      async ({ body }) => {
+        const { email, password } = body;
 
-      const currentUser = userInfo.user;
-      const currentRoles = currentUser.user_metadata?.roles || [];
-      const isAdmin = currentRoles.includes("admin");
-
-      console.log("isAdmin:", isAdmin);
-
-      // Validation des rôles autorisés
-      if (!isAdmin) {
-        return {
-          success: false,
-          error: "Admin only can create users with the role",
-        };
-      }
-
-      try {
-        // Créer l'utilisateur
-        const { data: createdUser, error } =
-          await supabase.auth.admin.createUser({
+        try {
+          const { data, error } = await supabase.auth.signInWithPassword({
             email,
             password,
-            user_metadata: { name, contact, details, roles },
-            email_confirm: true,
           });
 
-        if (error) {
-          return { success: false, error: error.message, details: error };
+          if (error) {
+            if (error.message === "Email not confirmed") {
+              return {
+                success: false,
+                error: "Please confirm your email before logging in",
+              };
+            }
+            console.error("Error logging in:", error);
+            return { success: false, error: error.message, details: error };
+          }
+
+          console.log("User logged in:", data);
+          return { success: true, user: data.user, session: data.session };
+        } catch (err) {
+          console.error("Unexpected error:", err);
+          return { success: false, error: "Internal server error", details: err };
+        }
+      },
+      {
+        body: t.Object({
+          email: t.String(),
+          password: t.String(),
+        }),
+      }
+    )
+    // .get("/status", () => {
+    //   return { ok: "ok" };
+    // })
+
+    // Create user
+    .post(
+      "/user",
+      async ({ body, headers, set }) => {
+        const {
+          email,
+          password,
+          name,
+          contact,
+          photo,
+          details,
+          start_date,
+          status,
+          roles,
+        } = body;
+
+        // Get current user info from Authorization header
+        const token = headers.authorization?.replace("Bearer ", "");
+        const { data: userInfo, error: userInfoError } =
+          await supabase.auth.getUser(token);
+
+        if (userInfoError || !userInfo?.user) {
+          set.status = 401;
+          return { success: false, error: "Unauthorized" };
         }
 
-        const userId = createdUser.user?.id;
-        const nameuser = createdUser.user?.user_metadata.name;
-        const cntct = createdUser.user?.user_metadata.contact;
-        const dtls = createdUser.user?.user_metadata.details;
-        // const pht = createdUser.user?.user_metadata.photo;
+        const currentUser = userInfo.user;
+        const currentRoles = currentUser.user_metadata?.roles || [];
+        const isAdmin = currentRoles.includes("admin");
 
-        if (!userId) {
-          return { success: false, error: "User created but no ID returned" };
-        }
-
-        // Handle photo upload if provided
-        let photoUrl = null;
-        // if (photo) {
-        //   const photoPath = `employer/${userId}/${Date.now()}.jpg`;
-        //   const { error: uploadError } = await supabase.storage
-        //     .from("employees")
-        //     .upload(photoPath, photo, {
-        //       contentType: photo.type,
-        //       upsert: true,
-        //     });
-
-        //   if (uploadError) {
-        //     return {
-        //       success: false,
-        //       error: "Failed to upload photo",
-        //       details: uploadError.message,
-        //     };
-        //   }
-
-        //   // Get the public URL of the uploaded photo
-        //   photoUrl = supabase.storage.from("employees").getPublicUrl(photoPath)
-        //     .data.publicUrl;
-        // }
-
-        // Insertion dans la table liée selon le rôle
-        const role = roles[0]; // on suppose un seul rôle ici
-        let insertResult;
-
-        switch (role) {
-          case "admin":
-            insertResult = await supabase.from("admin").insert({
-              id: userId,
-              name: nameuser,
-            });
-            break;
-
-          case "employer":
-            insertResult = await supabase.from("employer").insert({
-              id: userId,
-              contact: cntct,
-              details: dtls,
-              // photo: photo,
-            });
-            break;
-
-          case "assistant":
-            insertResult = await supabase.from("assistant").insert({
-              id: userId,
-            });
-            break;
-
-          default:
-            return {
-              success: false,
-              error: `Unknown role: ${role}`,
-            };
-        }
-
-        if (insertResult.error) {
+        if (!isAdmin) {
+          set.status = 403;
           return {
             success: false,
-            error: `User created, but failed to insert into ${role} table`,
-            details: insertResult.error,
+            error: "Only admins can create users with the role",
           };
         }
 
-        return {
-          success: true,
-          user: createdUser,
-          message: `User created, confirmed, and inserted into ${role} table`,
-        };
-      } catch (err) {
-        return { success: false, error: "Internal server error", details: err };
+        try {
+          // Create user
+          const { data: createdUser, error } =
+            await supabase.auth.admin.createUser({
+              email,
+              password,
+              user_metadata: {
+                name,
+                contact,
+                details,
+                start_date,
+                status,
+                roles,
+              },
+              email_confirm: true,
+            });
+
+          if (error) {
+            set.status = 400;
+            return { success: false, error: error.message, details: error };
+          }
+
+          const userId = createdUser.user?.id;
+          if (!userId) {
+            set.status = 500;
+            return { success: false, error: "User created but no ID returned" };
+          }
+
+          // Handle photo upload if provided
+          let photoUrl = null;
+          if (photo) {
+            const photoPath = `employer/${userId}/${Date.now()}.jpg`;
+            const { error: uploadError } = await supabase.storage
+              .from("employees")
+              .upload(photoPath, photo, {
+                contentType: photo.type,
+                upsert: true,
+              });
+
+            if (uploadError) {
+              set.status = 500;
+              return {
+                success: false,
+                error: "Failed to upload photo",
+                details: uploadError.message,
+              };
+            }
+
+            // Get the public URL of the uploaded photo
+            photoUrl = supabase.storage.from("employees").getPublicUrl(photoPath)
+              .data.publicUrl;
+
+            // Update user_metadata with photoUrl
+            const { error: updateError } =
+              await supabase.auth.admin.updateUserById(userId, {
+                user_metadata: {
+                  name,
+                  contact,
+                  details,
+                  start_date,
+                  status,
+                  roles,
+                  photo: photoUrl,
+                },
+              });
+
+            if (updateError) {
+              set.status = 500;
+              return {
+                success: false,
+                error: "Failed to update user metadata with photo URL",
+                details: updateError.message,
+              };
+            }
+          }
+
+          // Insert into role-specific table
+          const role = roles[0]; // Assuming a single role
+          let insertResult;
+
+          switch (role) {
+            case "admin":
+              insertResult = await supabase.from("admin").insert({
+                id: userId,
+                // name,
+              });
+              break;
+
+            case "employer":
+              insertResult = await supabase.from("employer").insert({
+                id: userId,
+                contact,
+                details,
+                photo: photoUrl,
+                start_date,
+              });
+              break;
+
+            case "assistant":
+              insertResult = await supabase.from("assistant").insert({
+                id: userId,
+              });
+              break;
+
+            default:
+              set.status = 400;
+              return {
+                success: false,
+                error: `Unknown role: ${role}`,
+              };
+          }
+
+          if (insertResult.error) {
+            set.status = 500;
+            return {
+              success: false,
+              error: `User created, but failed to insert into ${role} table`,
+              details: insertResult.error.message,
+            };
+          }
+
+          return {
+            success: true,
+            user: {
+              id: userId,
+              email,
+              user_metadata: {
+                name,
+                contact,
+                details,
+                photo: photoUrl,
+                start_date,
+                status,
+                roles,
+              },
+            },
+            message: `User created, confirmed, and inserted into ${role} table`,
+          };
+        } catch (err) {
+          console.error("Error creating user:", err);
+          set.status = 500;
+          return {
+            success: false,
+            error: "Internal server error",
+            details: err instanceof Error ? err.message : JSON.stringify(err),
+          };
+        }
+      },
+      {
+        body: t.Object({
+          email: t.String(),
+          password: t.String(),
+          name: t.String(),
+          status: t.String(),
+          contact: t.Nullable(t.String()),
+          details: t.Nullable(t.String()),
+          start_date: t.String(),
+          photo: t.Optional(t.File()),
+          roles: t.Array(t.String()),
+        }),
       }
-    },
-    {
-      body: t.Object({
-        email: t.String(),
-        password: t.String(),
-        name: t.String(),
-        contact: t.Nullable(t.String()),
-        details: t.Nullable(t.String()),
-        start_date: t.String(),
-        employment_status: t.String(),
-        // photo: t.Optional(t.File()),
-        roles: t.Array(t.String()),
-      }),
-    }
-  )
+    );
 
   // // Create employer
   // .post('/', async ({ body, set, request }) => {
@@ -517,96 +579,115 @@ app
   //   }
   // )
 
-  // Delete employer
-  .delete("/:id", async ({ params, set, request }) => {
-    const user = (request as any).user as SupabaseUser;
-    if (!user.user_metadata?.roles?.includes("admin")) {
-      set.status = 403;
-      return { success: false, error: "Only admins can delete users" };
-    }
+  // Employee routes
+  app.group("/employers", (app) =>
+    app
+      // Middleware to check authentication and roles
+      .onBeforeHandle(async ({ headers, set, request }) => {
+        const token = headers.authorization?.replace("Bearer ", "");
+        if (!token) {
+          set.status = 401;
+          return { success: false, error: "Unauthorized: No token provided" };
+        }
+        const {
+          data: { user },
+          error,
+        } = await supabase.auth.getUser(token);
+        if (error || !user) {
+          set.status = 401;
+          return { success: false, error: "Invalid token" };
+        }
 
-    // Fetch user to determine role
-    const { data: authUser, error: authError } =
-      await supabase.auth.admin.getUserById(params.id);
-    if (authError || !authUser?.user) {
-      set.status = 404;
-      return { success: false, error: "User not found" };
-    }
+        // Attach the user to the request object
+        (request as any).user = user as SupabaseUser;
+      })
 
-    const role = authUser.user.user_metadata?.roles?.[0];
-    if (!role) {
-      set.status = 400;
-      return { success: false, error: "User has no role" };
-    }
+      // Delete employer
+      .delete("/:id", async ({ params, set, request }) => {
+        const user = (request as any).user as SupabaseUser;
+        if (!user.user_metadata?.roles?.includes("admin")) {
+          set.status = 403;
+          return { success: false, error: "Only admins can delete users" };
+        }
 
-    // Delete from role-specific table
-    const { error: tableError } = await supabase
-      .from(role)
-      .delete()
-      .eq("id", params.id);
+        // Fetch user to determine role
+        const { data: authUser, error: authError } =
+          await supabase.auth.admin.getUserById(params.id);
+        if (authError || !authUser?.user) {
+          set.status = 404;
+          return { success: false, error: "User not found" };
+        }
 
-    if (tableError) {
-      set.status = 500;
-      return {
-        success: false,
-        error: `Failed to delete ${role}: ${tableError.message}`,
-      };
-    }
+        const role = authUser.user.user_metadata?.roles?.[0];
+        if (!role) {
+          set.status = 400;
+          return { success: false, error: "User has no role" };
+        }
 
-    // Delete from auth.users
-    const { error: userError } = await supabase.auth.admin.deleteUser(
-      params.id
-    );
-    if (userError) {
-      set.status = 500;
-      return {
-        success: false,
-        error: `Failed to delete user: ${userError.message}`,
-      };
-    }
-
-    return {
-      success: true,
-      message: `${role} and associated user deleted successfully`,
-    };
-  })
-
-  .patch(
-    "/:id",
-    async ({ body, params, set }) => {
-      const { name } = body;
-
-      //   const { error } = await supabase
-      // .from('users')
-      // .update({ name: name })
-      // .eq('id',params.id)
-
-      try {
-        const { error } = await supabase
-          .from("users")
-          .update({ name: name })
+        // Delete from role-specific table
+        const { error: tableError } = await supabase
+          .from(role)
+          .delete()
           .eq("id", params.id);
 
-        if (error) {
-          set.status = 404;
-          return { success: false, error: "User not found in public.users" };
+        if (tableError) {
+          set.status = 500;
+          return {
+            success: false,
+            error: `Failed to delete ${role}: ${tableError.message}`,
+          };
         }
-      } catch (err) {
-        console.error("Unexpected error:", err);
+
+        // Delete from auth.users
+        const { error: userError } = await supabase.auth.admin.deleteUser(
+          params.id
+        );
+        if (userError) {
+          set.status = 500;
+          return {
+            success: false,
+            error: `Failed to delete user: ${userError.message}`,
+          };
+        }
+
         return {
-          success: false,
-          error: "Internal server error",
-          details: err,
+          success: true,
+          message: `${role} and associated user deleted successfully`,
         };
-      }
-    },
-    {
-      body: t.Object({
-        name: t.String(),
-      }),
-    }
+      })
+
+      .patch(
+        "/:id",
+        async ({ body, params, set }) => {
+          const { name } = body;
+
+          try {
+            const { error } = await supabase
+              .from("users")
+              .update({ name: name })
+              .eq("id", params.id);
+
+            if (error) {
+              set.status = 404;
+              return { success: false, error: "User not found in public.users" };
+            }
+          } catch (err) {
+            console.error("Unexpected error:", err);
+            return {
+              success: false,
+              error: "Internal server error",
+              details: err,
+            };
+          }
+        },
+        {
+          body: t.Object({
+            name: t.String(),
+          }),
+        }
+      )
   );
 
-app.listen(3000, () => {
-  console.log("✅ Server running on http://localhost:3000");
-});
+  app.listen(3000, () => {
+    console.log("✅ Server running on http://localhost:3000");
+  });

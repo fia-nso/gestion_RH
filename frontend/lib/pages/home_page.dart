@@ -7,7 +7,11 @@ import 'package:frontend/uttils/navigator.dart';
 import 'package:provider/provider.dart';
 import '../controller_provider/auth_provider.dart';
 import '../controller_provider/employee_management_controller.dart';
+import '../controller_provider/leave_management_controller.dart';
 import '../controller_provider/locale_provider.dart';
+import '../models/leave_model.dart';
+import '../services/leave_service.dart';
+import '../widgets/leave_display_widgets.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
@@ -21,6 +25,7 @@ class HomePage extends StatelessWidget {
         ChangeNotifierProvider(
             create: (_) => EmployerUpdateController(context)),
         ChangeNotifierProvider(create: (_) => EmployeeManagementController()),
+        ChangeNotifierProvider(create: (_) => LeaveManagementController()),
       ],
       child: const _HomePageBody(),
     );
@@ -133,7 +138,15 @@ class _HomePageBodyState extends State<_HomePageBody>
   Widget _buildEmployerProfile(
       BuildContext context, AuthController authController) {
     final controller = context.watch<EmployerUpdateController>();
+    final leaveController = context.watch<LeaveManagementController>();
     final employer = authController.employer;
+
+    // Load leave allocations when the widget builds
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!leaveController.hasLoadedAllocations(employer.id)) {
+        leaveController.loadEmployeeLeaveAllocations(employer.id);
+      }
+    });
 
     return controller.loading
         ? const Center(child: CircularProgressIndicator())
@@ -171,6 +184,59 @@ class _HomePageBodyState extends State<_HomePageBody>
                       TextButton(
                         onPressed: () => controller.pickPhoto(context),
                         child: Text(AppLocalizations.of(context)!.upload_photo),
+                      ),
+                      const SizedBox(height: 20),
+                      // Leave Allocations Section
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    AppLocalizations.of(context)!.leave_balance,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                  ),
+                                  IconButton(
+                                    onPressed: () => _showLeaveDetailsDialog(
+                                      context,
+                                      leaveController
+                                          .getEmployeeAllocations(employer.id),
+                                      employer.name ?? 'Employee',
+                                    ),
+                                    icon: const Icon(Icons.open_in_full),
+                                    tooltip: AppLocalizations.of(context)!
+                                        .view_details,
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              if (leaveController.isLoading(employer.id))
+                                const Center(child: CircularProgressIndicator())
+                              else if (leaveController.getError(employer.id) !=
+                                  null)
+                                Text(
+                                  leaveController.getError(employer.id)!,
+                                  style: const TextStyle(color: Colors.red),
+                                )
+                              else
+                                LeaveAllocationSummary(
+                                  allocations: leaveController
+                                      .getEmployeeAllocations(employer.id),
+                                  showTitle: false,
+                                ),
+                            ],
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 20),
                       TextField(
@@ -233,35 +299,93 @@ class _HomePageBodyState extends State<_HomePageBody>
 
   Widget _buildGenericProfile(
       BuildContext context, AuthController authController, String userRole) {
+    final leaveController = context.watch<LeaveManagementController>();
     final userName = authController.user.name;
     final userStatus = authController.user.status;
+    final userId = authController.user.id;
+
+    // Load leave allocations when the widget builds
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!leaveController.hasLoadedAllocations(userId)) {
+        leaveController.loadEmployeeLeaveAllocations(userId);
+      }
+    });
 
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircleAvatar(
-            radius: 50,
-            backgroundColor: Colors.grey[200],
-            child: const Icon(Icons.person, size: 50),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            '${AppLocalizations.of(context)!.bienvenue}, ${userName ?? "Utilisateur"}',
-            style: Theme.of(context).textTheme.titleLarge,
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'Rôle : ${userRole.toUpperCase()}',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: 20),
-          Text(
-            '${AppLocalizations.of(context)!.status}: ${userStatus ?? 'N/A'}',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-        ],
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircleAvatar(
+              radius: 50,
+              backgroundColor: Colors.grey[200],
+              child: const Icon(Icons.person, size: 50),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              '${AppLocalizations.of(context)!.bienvenue}, ${userName ?? "Utilisateur"}',
+              style: Theme.of(context).textTheme.titleLarge,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            Text(
+              '${AppLocalizations.of(context)!.role}: ${userRole.toUpperCase()}',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 20),
+            Text(
+              '${AppLocalizations.of(context)!.status}: ${userStatus ?? 'N/A'}',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 20),
+            // Leave Allocations Section
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          AppLocalizations.of(context)!.leave_balance,
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                        ),
+                        IconButton(
+                          onPressed: () => _showLeaveDetailsDialog(
+                            context,
+                            leaveController.getEmployeeAllocations(userId),
+                            userName ?? 'User',
+                          ),
+                          icon: const Icon(Icons.open_in_full),
+                          tooltip: AppLocalizations.of(context)!.view_details,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    if (leaveController.isLoading(userId))
+                      const Center(child: CircularProgressIndicator())
+                    else if (leaveController.getError(userId) != null)
+                      Text(
+                        leaveController.getError(userId)!,
+                        style: const TextStyle(color: Colors.red),
+                      )
+                    else
+                      LeaveAllocationSummary(
+                        allocations:
+                            leaveController.getEmployeeAllocations(userId),
+                        showTitle: false,
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -284,8 +408,8 @@ class _HomePageBodyState extends State<_HomePageBody>
             TextButton(
               child: Text(AppLocalizations.of(context)!.logout),
               onPressed: () async {
-                await EmployerService().signOut();
                 Navigator.of(context).pop();
+                await EmployerService().signOut();
                 if (context.mounted) {
                   AppNavigator.pushReplacement('/login');
                 }
@@ -294,6 +418,17 @@ class _HomePageBodyState extends State<_HomePageBody>
           ],
         );
       },
+    );
+  }
+
+  void _showLeaveDetailsDialog(
+      BuildContext context, List<LeaveAllocation> allocations, String name) {
+    showDialog(
+      context: context,
+      builder: (context) => LeaveAllocationDialog(
+        allocations: allocations,
+        employeeName: name,
+      ),
     );
   }
 }
@@ -398,6 +533,15 @@ class _EmployeeManagementViewState extends State<EmployeeManagementView> {
 
   void _showEmployeeDetails(BuildContext context, Employer employee) {
     final appLocalizations = AppLocalizations.of(context)!;
+    final leaveController = context.read<LeaveManagementController>();
+
+    // Load leave allocations for the employee
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!leaveController.hasLoadedAllocations(employee.id)) {
+        leaveController.loadEmployeeLeaveAllocations(employee.id);
+      }
+    });
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -419,8 +563,54 @@ class _EmployeeManagementViewState extends State<EmployeeManagementView> {
               Text('${appLocalizations.contact}: ${employee.contact ?? 'N/A'}'),
               Text('${appLocalizations.details}: ${employee.details ?? 'N/A'}'),
               Text(
-                  '${'start_date'}: ${employee.startDate != null ? DateFormat.yMMMd().format(employee.startDate!) : 'N/A'}'),
+                  '${appLocalizations.start_date}: ${employee.startDate != null ? DateFormat.yMMMd().format(employee.startDate!) : 'N/A'}'),
               Text('${appLocalizations.status}: ${employee.status ?? 'N/A'}'),
+              const SizedBox(height: 16),
+              Consumer<LeaveManagementController>(
+                builder: (context, leaveController, child) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            appLocalizations.leave_balance,
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          IconButton(
+                            onPressed: () => _showLeaveDetailsDialog(
+                              context,
+                              leaveController
+                                  .getEmployeeAllocations(employee.id),
+                              employee.name ?? 'Employee',
+                            ),
+                            icon: const Icon(Icons.open_in_full),
+                            tooltip: appLocalizations.view_details,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      if (leaveController.isLoading(employee.id))
+                        const Center(child: CircularProgressIndicator())
+                      else if (leaveController.getError(employee.id) != null)
+                        Text(
+                          leaveController.getError(employee.id)!,
+                          style: const TextStyle(color: Colors.red),
+                        )
+                      else
+                        LeaveAllocationSummary(
+                          allocations: leaveController
+                              .getEmployeeAllocations(employee.id),
+                          showTitle: false,
+                        ),
+                    ],
+                  );
+                },
+              ),
             ],
           ),
         ),
@@ -474,6 +664,17 @@ class _EmployeeManagementViewState extends State<EmployeeManagementView> {
             child: Text(appLocalizations.delete),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showLeaveDetailsDialog(
+      BuildContext context, List<LeaveAllocation> allocations, String name) {
+    showDialog(
+      context: context,
+      builder: (context) => LeaveAllocationDialog(
+        allocations: allocations,
+        employeeName: name,
       ),
     );
   }
@@ -611,7 +812,7 @@ class _CreateEmployeeDialogState extends State<CreateEmployeeDialog> {
               TextFormField(
                 readOnly: true,
                 decoration: InputDecoration(
-                  labelText: 'start_date',
+                  labelText: appLocalizations.start_date,
                   hintText: _startDate == null
                       ? 'Select start date'
                       : DateFormat.yMMMd().format(_startDate!),
@@ -682,7 +883,13 @@ class _CreateEmployeeDialogState extends State<CreateEmployeeDialog> {
                 startDate: _startDate,
                 status: _status,
               );
-              if (context.mounted) Navigator.of(context).pop();
+              if (context.mounted) {
+                // Initialize leave allocations for the new employee
+                await LeaveService().initializeEmployeeLeaveAllocations(
+                    _emailController
+                        .text); // Use email as employeeId for new user
+                Navigator.of(context).pop();
+              }
             }
           },
           child: Text(appLocalizations.create),
@@ -721,7 +928,7 @@ class _EditEmployeeDialogState extends State<EditEmployeeDialog> {
     _startDate = widget.employee.startDate;
     _status = widget.employee.status != null
         ? Status.fromString(widget.employee.status!)
-        : null;
+        : Status.active;
   }
 
   @override
@@ -811,7 +1018,7 @@ class _EditEmployeeDialogState extends State<EditEmployeeDialog> {
               TextFormField(
                 readOnly: true,
                 decoration: InputDecoration(
-                  labelText: 'start_date',
+                  labelText: appLocalizations.start_date,
                   hintText: _startDate == null
                       ? 'Select start date'
                       : DateFormat.yMMMd().format(_startDate!),

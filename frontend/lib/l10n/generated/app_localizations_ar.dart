@@ -106,7 +106,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get name => 'الاسم';
 
   @override
-  String get contact => 'التواصل';
+  String get contact => 'معلومات الاتصال';
 
   @override
   String get email => 'البريد الإلكتروني';
@@ -137,4 +137,13 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get start_date_required => 'تاريخ البدء مطلوب';
+
+  @override
+  String get leave_balance => 'رصيد الإجازات';
+
+  @override
+  String get view_details => 'عرض التفاصيل';
+
+  @override
+  String get role => 'الدور';
 }

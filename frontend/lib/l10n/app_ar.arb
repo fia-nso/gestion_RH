@@ -33,7 +33,7 @@
   "change_language": "تغيير اللغة",
   "bienvenue": "مرحبا",
   "name": "الاسم",
-  "contact": "التواصل",
+  "contact": "معلومات الاتصال",
   "email": "البريد الإلكتروني",
   "password": "كلمة المرور",
   "se_connecter": "تسجيل الدخول",
@@ -43,5 +43,8 @@
   "status": "الحالة",
   "status_required": "الحالة مطلوبة",
   "start_date": "تاريخ البدء",
-  "start_date_required": "تاريخ البدء مطلوب"
+  "start_date_required": "تاريخ البدء مطلوب",
+  "leave_balance": "رصيد الإجازات",
+  "view_details": "عرض التفاصيل",
+  "role": "الدور"
 }

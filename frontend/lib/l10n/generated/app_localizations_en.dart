@@ -43,7 +43,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get no_name => 'No name';
 
   @override
-  String get no_contact => 'No contact';
+  String get no_contact => 'No contact information';
 
   @override
   String get edit => 'Edit';
@@ -106,7 +106,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get name => 'Name';
 
   @override
-  String get contact => 'Contact';
+  String get contact => 'Contact Information';
 
   @override
   String get email => 'Email';
@@ -137,4 +137,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get start_date_required => 'Start date is required';
+
+  @override
+  String get leave_balance => 'Leave Balance';
+
+  @override
+  String get view_details => 'View Details';
+
+  @override
+  String get role => 'Role';
 }

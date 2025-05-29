@@ -39,27 +39,35 @@ class EmployeeManagementController extends ChangeNotifier {
     loading = true;
     error = null;
     notifyListeners();
+try {
+  print('🔄 Controller: Début création employé');
 
-    try {
-      final success = await _service.createEmployee(
-        name: name,
-        email: email,
-        password: password,
-        contact: contact,
-        details: details,
-        startDate: startDate,
-        status: status,
-      );
-      if (success) {
-        await loadEmployees();
-      } else {
-        throw Exception('Échec de la création');
-      }
-    } catch (e) {
-      error = 'Échec de la création de l\'employé : $e';
-      loading = false;
-      notifyListeners();
-    }
+  final success = await _service.createEmployee(
+    name: name,
+    email: email,
+    password: password,
+    contact: contact,
+    details: details,
+    startDate: startDate,
+    status: status,
+  );
+
+  print('✅ Controller: Résultat service = $success');
+
+  if (success) {
+    print('🔄 Controller: Rechargement des employés...');
+    await loadEmployees();
+    loading = false;
+    notifyListeners();
+  } else {
+    throw Exception('Le service a retourné false');
+  }
+} catch (e) {
+  print('💥 Controller: Erreur = $e');
+  error = 'Échec de la création de l\'employé : $e';
+  loading = false;
+  notifyListeners();
+}
   }
 
   Future<void> updateEmployee({

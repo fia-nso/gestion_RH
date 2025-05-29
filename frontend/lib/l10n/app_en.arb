@@ -12,7 +12,7 @@
   "retry": "Retry",
   "no_employees": "No employees",
   "no_name": "No name",
-  "no_contact": "No contact",
+  "no_contact": "No contact information",
   "edit": "Edit",
   "employee_details": "Employee Details",
   "close": "Close",
@@ -33,7 +33,7 @@
   "change_language": "Change Language",
   "bienvenue": "Welcome",
   "name": "Name",
-  "contact": "Contact",
+  "contact": "Contact Information",
   "email": "Email",
   "password": "Password",
   "se_connecter": "Log in",
@@ -43,5 +43,8 @@
   "status": "Status",
   "status_required": "Status is required",
   "start_date": "Start Date",
-  "start_date_required": "Start date is required"
+  "start_date_required": "Start date is required",
+  "leave_balance": "Leave Balance",
+  "view_details": "View Details",
+  "role": "Role"
 }
