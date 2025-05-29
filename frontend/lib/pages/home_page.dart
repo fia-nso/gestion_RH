@@ -474,55 +474,59 @@ class _EmployeeManagementViewState extends State<EmployeeManagementView> {
                   ? Center(
                       child: Text(appLocalizations.no_employees),
                     )
-                  : ListView.builder(
-                      itemCount: controller.employees.length,
-                      itemBuilder: (context, index) {
-                        final employee = controller.employees[index];
-                        return Card(
-                          margin: const EdgeInsets.all(8.0),
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              backgroundImage: employee.photo != null &&
-                                      employee.photo!.isNotEmpty
-                                  ? NetworkImage(employee.photo!)
-                                  : null,
-                              child: employee.photo == null ||
-                                      employee.photo!.isEmpty
-                                  ? const Icon(Icons.person)
-                                  : null,
+                  : RefreshIndicator(
+                      onRefresh: () => controller.loadEmployees(),
+                      child: ListView.builder(
+                        itemCount: controller.employees.length,
+                        itemBuilder: (context, index) {
+                          final employee = controller.employees[index];
+                          return Card(
+                            margin: const EdgeInsets.all(8.0),
+                            child: ListTile(
+                              leading: CircleAvatar(
+                                backgroundImage: employee.photo != null &&
+                                        employee.photo!.isNotEmpty
+                                    ? NetworkImage(employee.photo!)
+                                    : null,
+                                child: employee.photo == null ||
+                                        employee.photo!.isEmpty
+                                    ? const Icon(Icons.person)
+                                    : null,
+                              ),
+                              title: Text(
+                                  employee.name ?? appLocalizations.no_name),
+                              subtitle: Text(employee.contact ??
+                                  appLocalizations.no_contact),
+                              trailing: PopupMenuButton<String>(
+                                onSelected: (String value) {
+                                  switch (value) {
+                                    case 'edit':
+                                      _showEditEmployeeDialog(
+                                          context, employee);
+                                      break;
+                                    case 'delete':
+                                      _showDeleteEmployeeDialog(
+                                          context, employee);
+                                      break;
+                                  }
+                                },
+                                itemBuilder: (BuildContext context) => [
+                                  PopupMenuItem<String>(
+                                    value: 'edit',
+                                    child: Text(appLocalizations.edit),
+                                  ),
+                                  PopupMenuItem<String>(
+                                    value: 'delete',
+                                    child: Text(appLocalizations.delete),
+                                  ),
+                                ],
+                              ),
+                              onTap: () =>
+                                  _showEmployeeDetails(context, employee),
                             ),
-                            title:
-                                Text(employee.name ?? appLocalizations.no_name),
-                            subtitle: Text(employee.contact ??
-                                appLocalizations.no_contact),
-                            trailing: PopupMenuButton<String>(
-                              onSelected: (String value) {
-                                switch (value) {
-                                  case 'edit':
-                                    _showEditEmployeeDialog(context, employee);
-                                    break;
-                                  case 'delete':
-                                    _showDeleteEmployeeDialog(
-                                        context, employee);
-                                    break;
-                                }
-                              },
-                              itemBuilder: (BuildContext context) => [
-                                PopupMenuItem<String>(
-                                  value: 'edit',
-                                  child: Text(appLocalizations.edit),
-                                ),
-                                PopupMenuItem<String>(
-                                  value: 'delete',
-                                  child: Text(appLocalizations.delete),
-                                ),
-                              ],
-                            ),
-                            onTap: () =>
-                                _showEmployeeDetails(context, employee),
-                          ),
-                        );
-                      },
+                          );
+                        },
+                      ),
                     ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showCreateEmployeeDialog(context),

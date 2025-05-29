@@ -27,7 +27,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => LocaleProvider()),
         ChangeNotifierProvider.value(value: AuthController()),
         ChangeNotifierProvider(create: (_) => EmployeeManagementController()),
-        ChangeNotifierProvider(create: (_) => LeaveManagementController()),
+        // ChangeNotifierProvider(create: (_) => LeaveManagementController()),
       ],
       child: const MyApp(),
     ),
