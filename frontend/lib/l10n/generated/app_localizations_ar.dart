@@ -58,7 +58,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get delete_employee => 'حذف الموظف';
 
   @override
-  String get confirm_delete_employee => 'تأكيد حذف ';
+  String confirm_delete_employee(Object name) {
+    return 'هل تريد تأكيد حذف الموظف $name؟';
+  }
 
   @override
   String get create_employee => 'إنشاء موظف';
@@ -146,4 +148,142 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get role => 'الدور';
+
+  @override
+  String get absence_summary => 'ملخص الغياب';
+
+  @override
+  String get absence_details => 'تفاصيل الغياب';
+
+  @override
+  String get total_absence_hours => 'إجمالي ساعات الغياب';
+
+  @override
+  String get no_absences => 'لا توجد غيابات مسجلة';
+
+  @override
+  String get record_absence => 'تسجيل غياب';
+
+  @override
+  String get absence_type => 'نوع الغياب';
+
+  @override
+  String get absence_type_required => 'يرجى اختيار نوع الغياب';
+
+  @override
+  String get date => 'التاريخ';
+
+  @override
+  String get date_required => 'يرجى اختيار التاريخ';
+
+  @override
+  String get duration => 'المدة';
+
+  @override
+  String get duration_required => 'يرجى اختيار المدة';
+
+  @override
+  String get reason => 'السبب';
+
+  @override
+  String get absence_recorded => 'تم تسجيل الغياب بنجاح';
+
+  @override
+  String get duration_exceeds_workday => 'لا يمكن أن تتجاوز المدة 7 ساعات';
+
+  @override
+  String get record => 'تسجيل';
+
+  @override
+  String get select_duration => 'حدد المدة';
+
+  @override
+  String get select_date => ' حدد التاريخ ';
+
+  @override
+  String get sick_leave => 'إجازة مرضية';
+
+  @override
+  String get vacation_leave => 'إجازة سنوية';
+
+  @override
+  String get off_leave => 'إجازة شخصية';
+
+  @override
+  String get no_leave_allocations => 'لا توجد تخصيصات إجازات مسجلة';
+
+  @override
+  String get leave_details => 'تفاصيل الإجازة';
+
+  @override
+  String get allocated => 'المخصص';
+
+  @override
+  String get used => 'المستخدم';
+
+  @override
+  String get remaining => 'المتبقي';
+
+  @override
+  String get days => 'أيام';
+
+  @override
+  String get hours => 'ساعات';
+
+  @override
+  String get times => 'مرات';
+
+  @override
+  String get progress => 'التقدم';
+
+  @override
+  String get absence_distribution => 'توزيع أنواع الغياب';
+
+  @override
+  String get work_hours_note => 'ساعات العمل الافتراضية: 10:00 صباحًا إلى 5:00 مساءً (7 ساعات يوميًا)';
+
+  @override
+  String get reason_required => 'السبب مطلوب';
+
+  @override
+  String get custom_reason => 'سبب مخصص';
+
+  @override
+  String get error => 'حدث خطأ';
+
+  @override
+  String get select_employee => 'اختر موظفًا';
+
+  @override
+  String get select_employee_message => 'اختر موظفًا من القائمة لعرض تفاصيل إجازاته وغياباته';
+
+  @override
+  String get admin_actions => 'إجراءات المدير';
+
+  @override
+  String get schedule => 'الجدول: 10:00 صباحًا - 5:00 مساءً';
+
+  @override
+  String get start_date_label => 'تاريخ البدء';
+
+  @override
+  String get active => 'نشط';
+
+  @override
+  String get on_leave => 'في إجازة';
+
+  @override
+  String get resigned => 'مستقيل';
+
+  @override
+  String get add_employee => 'إضافة موظف';
+
+  @override
+  String get end_time_after_start => 'يجب أن يكون وقت النهاية بعد وقت البداية';
+
+  @override
+  String get absence_recorded_success => 'تم تسجيل الغياب بنجاح';
+
+  @override
+  String get error_generic => 'حدث خطأ';
 }

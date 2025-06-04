@@ -200,8 +200,8 @@ abstract class AppLocalizations {
   /// No description provided for @confirm_delete_employee.
   ///
   /// In en, this message translates to:
-  /// **'Confirm deletion of '**
-  String get confirm_delete_employee;
+  /// **'Are you sure you want to delete {name}?'**
+  String confirm_delete_employee(Object name);
 
   /// No description provided for @create_employee.
   ///
@@ -376,6 +376,282 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Role'**
   String get role;
+
+  /// No description provided for @absence_summary.
+  ///
+  /// In en, this message translates to:
+  /// **'Absence Summary'**
+  String get absence_summary;
+
+  /// No description provided for @absence_details.
+  ///
+  /// In en, this message translates to:
+  /// **'Absence Details'**
+  String get absence_details;
+
+  /// No description provided for @total_absence_hours.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Absence Hours'**
+  String get total_absence_hours;
+
+  /// No description provided for @no_absences.
+  ///
+  /// In en, this message translates to:
+  /// **'No absences recorded'**
+  String get no_absences;
+
+  /// No description provided for @record_absence.
+  ///
+  /// In en, this message translates to:
+  /// **'Record Absence'**
+  String get record_absence;
+
+  /// No description provided for @absence_type.
+  ///
+  /// In en, this message translates to:
+  /// **'Absence Type'**
+  String get absence_type;
+
+  /// No description provided for @absence_type_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select an absence type'**
+  String get absence_type_required;
+
+  /// No description provided for @date.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get date;
+
+  /// No description provided for @date_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a date'**
+  String get date_required;
+
+  /// No description provided for @duration.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration'**
+  String get duration;
+
+  /// No description provided for @duration_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a duration'**
+  String get duration_required;
+
+  /// No description provided for @reason.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason'**
+  String get reason;
+
+  /// No description provided for @absence_recorded.
+  ///
+  /// In en, this message translates to:
+  /// **'Absence recorded successfully'**
+  String get absence_recorded;
+
+  /// No description provided for @duration_exceeds_workday.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration cannot exceed 7 hours'**
+  String get duration_exceeds_workday;
+
+  /// No description provided for @record.
+  ///
+  /// In en, this message translates to:
+  /// **'record'**
+  String get record;
+
+  /// No description provided for @select_duration.
+  ///
+  /// In en, this message translates to:
+  /// **'select duration'**
+  String get select_duration;
+
+  /// No description provided for @select_date.
+  ///
+  /// In en, this message translates to:
+  /// **'select date'**
+  String get select_date;
+
+  /// No description provided for @sick_leave.
+  ///
+  /// In en, this message translates to:
+  /// **'Sick Leave'**
+  String get sick_leave;
+
+  /// No description provided for @vacation_leave.
+  ///
+  /// In en, this message translates to:
+  /// **'Vacation Leave'**
+  String get vacation_leave;
+
+  /// No description provided for @off_leave.
+  ///
+  /// In en, this message translates to:
+  /// **'Off Leave'**
+  String get off_leave;
+
+  /// No description provided for @no_leave_allocations.
+  ///
+  /// In en, this message translates to:
+  /// **'No leave allocations recorded'**
+  String get no_leave_allocations;
+
+  /// No description provided for @leave_details.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave Details'**
+  String get leave_details;
+
+  /// No description provided for @allocated.
+  ///
+  /// In en, this message translates to:
+  /// **'Allocated'**
+  String get allocated;
+
+  /// No description provided for @used.
+  ///
+  /// In en, this message translates to:
+  /// **'Used'**
+  String get used;
+
+  /// No description provided for @remaining.
+  ///
+  /// In en, this message translates to:
+  /// **'Remaining'**
+  String get remaining;
+
+  /// No description provided for @days.
+  ///
+  /// In en, this message translates to:
+  /// **'Days'**
+  String get days;
+
+  /// No description provided for @hours.
+  ///
+  /// In en, this message translates to:
+  /// **'Hours'**
+  String get hours;
+
+  /// No description provided for @times.
+  ///
+  /// In en, this message translates to:
+  /// **'Times'**
+  String get times;
+
+  /// No description provided for @progress.
+  ///
+  /// In en, this message translates to:
+  /// **'Progress'**
+  String get progress;
+
+  /// No description provided for @absence_distribution.
+  ///
+  /// In en, this message translates to:
+  /// **'Absence Type Distribution'**
+  String get absence_distribution;
+
+  /// No description provided for @work_hours_note.
+  ///
+  /// In en, this message translates to:
+  /// **'Default work hours: 10:00 AM to 5:00 PM (7 hours per day)'**
+  String get work_hours_note;
+
+  /// No description provided for @reason_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason is required'**
+  String get reason_required;
+
+  /// No description provided for @custom_reason.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom Reason'**
+  String get custom_reason;
+
+  /// No description provided for @error.
+  ///
+  /// In en, this message translates to:
+  /// **'An error occurred'**
+  String get error;
+
+  /// No description provided for @select_employee.
+  ///
+  /// In en, this message translates to:
+  /// **'Select an Employee'**
+  String get select_employee;
+
+  /// No description provided for @select_employee_message.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an employee from the list to view their leave and absence details'**
+  String get select_employee_message;
+
+  /// No description provided for @admin_actions.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin Actions'**
+  String get admin_actions;
+
+  /// No description provided for @schedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule: 10:00 AM - 5:00 PM'**
+  String get schedule;
+
+  /// No description provided for @start_date_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Date'**
+  String get start_date_label;
+
+  /// No description provided for @active.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get active;
+
+  /// No description provided for @on_leave.
+  ///
+  /// In en, this message translates to:
+  /// **'On Leave'**
+  String get on_leave;
+
+  /// No description provided for @resigned.
+  ///
+  /// In en, this message translates to:
+  /// **'Resigned'**
+  String get resigned;
+
+  /// No description provided for @add_employee.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Employee'**
+  String get add_employee;
+
+  /// No description provided for @end_time_after_start.
+  ///
+  /// In en, this message translates to:
+  /// **'End time must be after start time'**
+  String get end_time_after_start;
+
+  /// No description provided for @absence_recorded_success.
+  ///
+  /// In en, this message translates to:
+  /// **'Absence recorded successfully'**
+  String get absence_recorded_success;
+
+  /// No description provided for @error_generic.
+  ///
+  /// In en, this message translates to:
+  /// **'An error occurred'**
+  String get error_generic;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -58,7 +58,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get delete_employee => 'Delete Employee';
 
   @override
-  String get confirm_delete_employee => 'Confirm deletion of ';
+  String confirm_delete_employee(Object name) {
+    return 'Are you sure you want to delete $name?';
+  }
 
   @override
   String get create_employee => 'Create Employee';
@@ -146,4 +148,142 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get role => 'Role';
+
+  @override
+  String get absence_summary => 'Absence Summary';
+
+  @override
+  String get absence_details => 'Absence Details';
+
+  @override
+  String get total_absence_hours => 'Total Absence Hours';
+
+  @override
+  String get no_absences => 'No absences recorded';
+
+  @override
+  String get record_absence => 'Record Absence';
+
+  @override
+  String get absence_type => 'Absence Type';
+
+  @override
+  String get absence_type_required => 'Please select an absence type';
+
+  @override
+  String get date => 'Date';
+
+  @override
+  String get date_required => 'Please select a date';
+
+  @override
+  String get duration => 'Duration';
+
+  @override
+  String get duration_required => 'Please select a duration';
+
+  @override
+  String get reason => 'Reason';
+
+  @override
+  String get absence_recorded => 'Absence recorded successfully';
+
+  @override
+  String get duration_exceeds_workday => 'Duration cannot exceed 7 hours';
+
+  @override
+  String get record => 'record';
+
+  @override
+  String get select_duration => 'select duration';
+
+  @override
+  String get select_date => 'select date';
+
+  @override
+  String get sick_leave => 'Sick Leave';
+
+  @override
+  String get vacation_leave => 'Vacation Leave';
+
+  @override
+  String get off_leave => 'Off Leave';
+
+  @override
+  String get no_leave_allocations => 'No leave allocations recorded';
+
+  @override
+  String get leave_details => 'Leave Details';
+
+  @override
+  String get allocated => 'Allocated';
+
+  @override
+  String get used => 'Used';
+
+  @override
+  String get remaining => 'Remaining';
+
+  @override
+  String get days => 'Days';
+
+  @override
+  String get hours => 'Hours';
+
+  @override
+  String get times => 'Times';
+
+  @override
+  String get progress => 'Progress';
+
+  @override
+  String get absence_distribution => 'Absence Type Distribution';
+
+  @override
+  String get work_hours_note => 'Default work hours: 10:00 AM to 5:00 PM (7 hours per day)';
+
+  @override
+  String get reason_required => 'Reason is required';
+
+  @override
+  String get custom_reason => 'Custom Reason';
+
+  @override
+  String get error => 'An error occurred';
+
+  @override
+  String get select_employee => 'Select an Employee';
+
+  @override
+  String get select_employee_message => 'Choose an employee from the list to view their leave and absence details';
+
+  @override
+  String get admin_actions => 'Admin Actions';
+
+  @override
+  String get schedule => 'Schedule: 10:00 AM - 5:00 PM';
+
+  @override
+  String get start_date_label => 'Start Date';
+
+  @override
+  String get active => 'Active';
+
+  @override
+  String get on_leave => 'On Leave';
+
+  @override
+  String get resigned => 'Resigned';
+
+  @override
+  String get add_employee => 'Add Employee';
+
+  @override
+  String get end_time_after_start => 'End time must be after start time';
+
+  @override
+  String get absence_recorded_success => 'Absence recorded successfully';
+
+  @override
+  String get error_generic => 'An error occurred';
 }

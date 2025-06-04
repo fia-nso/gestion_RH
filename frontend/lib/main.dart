@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:frontend/controller_provider/auth_provider.dart';
 import 'package:frontend/controller_provider/leave_management_controller.dart';
+// import 'package:frontend/controller_provider/leave_management_controller.dart';
 import 'package:frontend/l10n/generated/app_localizations.dart';
 import 'package:frontend/pages/splash_screen.dart';
 import 'package:frontend/uttils/navigator.dart';
@@ -27,7 +28,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => LocaleProvider()),
         ChangeNotifierProvider.value(value: AuthController()),
         ChangeNotifierProvider(create: (_) => EmployeeManagementController()),
-        // ChangeNotifierProvider(create: (_) => LeaveManagementController()),
+        ChangeNotifierProvider(create: (_) => LeaveManagementController()),
       ],
       child: const MyApp(),
     ),
@@ -36,6 +37,7 @@ void main() async {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Consumer<LocaleProvider>(builder: (context, localeProvider, child) {

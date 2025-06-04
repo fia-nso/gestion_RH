@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../models/absence_model.dart';
 import '../models/leave_model.dart';
 
 class LeaveService {
@@ -144,4 +145,52 @@ class LeaveService {
       return false;
     }
   }
+
+  Future<List<Absence>> getEmployeeAbsences(String employeeId, [int? year]) async {
+    try {
+      print('Fetching absences for employee: $employeeId');
+      var query = client
+          .from('absences')
+          .select('*')
+          .eq('employee_id', employeeId);
+
+      if (year != null) {
+        query = query.gte('date', DateTime(year).toIso8601String())
+                    .lte('date', DateTime(year, 12, 31).toIso8601String());
+      }
+
+      final response = await query.order('date', ascending: false);
+      print('Absences response: $response');
+      return response.map((map) => Absence.fromMap(map)).toList();
+    } catch (e) {
+      print("getEmployeeAbsences() failed: $e");
+      return [];
+    }
+  }
+
+  Future<bool> createAbsence({
+    required String employeeId,
+    required AbsenceType type,
+    required DateTime date,
+    required Duration duration,
+    String? reason,
+  }) async {
+    try {
+      final response = await client.from('absences').insert({
+        'employee_id': employeeId,
+        'absence_type': type.name,
+        'date': date.toIso8601String(),
+        'duration_minutes': duration.inMinutes,
+        'reason': reason,
+        'created_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+      print('Absence created successfully');
+      return true;
+    } catch (e) {
+      print("createAbsence() failed: $e");
+      return false;
+    }
+  }
+  
 }

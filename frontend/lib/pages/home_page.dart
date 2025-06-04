@@ -9,6 +9,7 @@ import '../controller_provider/auth_provider.dart';
 import '../controller_provider/employee_management_controller.dart';
 import '../controller_provider/leave_management_controller.dart';
 import '../controller_provider/locale_provider.dart';
+import '../models/absence_model.dart';
 import '../models/leave_model.dart';
 import '../services/leave_service.dart';
 import '../widgets/leave_display_widgets.dart';
@@ -22,8 +23,7 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(
-            create: (_) => EmployerUpdateController(context)),
+        ChangeNotifierProvider(create: (_) => EmployerUpdateController(context)),
         ChangeNotifierProvider(create: (_) => EmployeeManagementController()),
         ChangeNotifierProvider(create: (_) => LeaveManagementController()),
       ],
@@ -39,8 +39,7 @@ class _HomePageBody extends StatefulWidget {
   State<_HomePageBody> createState() => _HomePageBodyState();
 }
 
-class _HomePageBodyState extends State<_HomePageBody>
-    with SingleTickerProviderStateMixin {
+class _HomePageBodyState extends State<_HomePageBody> with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -48,7 +47,6 @@ class _HomePageBodyState extends State<_HomePageBody>
     super.initState();
     final authController = Provider.of<AuthController>(context, listen: false);
     final userRole = authController.user.currentRole.id;
-
     int tabCount = userRole == 'admin' ? 2 : 1;
     _tabController = TabController(length: tabCount, vsync: this);
   }
@@ -64,7 +62,6 @@ class _HomePageBodyState extends State<_HomePageBody>
     final localeController = Provider.of<LocaleProvider>(context);
     final authController = context.watch<AuthController>();
     final userRole = authController.user.currentRole.id;
-    final userName = authController.user.name;
 
     List<Tab> tabs = [];
     List<Widget> tabViews = [];
@@ -98,36 +95,30 @@ class _HomePageBodyState extends State<_HomePageBody>
           ),
         ],
         bottom: tabs.length > 1
-            ? TabBar(
-                controller: _tabController,
-                tabs: tabs,
-              )
+            ? TabBar(controller: _tabController, tabs: tabs)
             : null,
       ),
       body: tabs.length > 1
-          ? TabBarView(
-              controller: _tabController,
-              children: tabViews,
-            )
+          ? TabBarView(controller: _tabController, children: tabViews)
           : tabViews.first,
     );
   }
 
   String _getRoleTitle(BuildContext context, String role) {
+    final appLocalizations = AppLocalizations.of(context)!;
     switch (role) {
       case 'admin':
-        return AppLocalizations.of(context)!.admin;
+        return appLocalizations.admin;
       case 'employer':
-        return AppLocalizations.of(context)!.employer;
+        return appLocalizations.employer;
       case 'assistant':
-        return AppLocalizations.of(context)!.assistant;
+        return appLocalizations.assistant;
       default:
         return 'Dashboard';
     }
   }
 
-  Widget _buildProfileTab(
-      BuildContext context, AuthController authController, String userRole) {
+  Widget _buildProfileTab(BuildContext context, AuthController authController, String userRole) {
     if (userRole == 'employer') {
       return _buildEmployerProfile(context, authController);
     } else {
@@ -135,15 +126,15 @@ class _HomePageBodyState extends State<_HomePageBody>
     }
   }
 
-  Widget _buildEmployerProfile(
-      BuildContext context, AuthController authController) {
+  Widget _buildEmployerProfile(BuildContext context, AuthController authController) {
     final controller = context.watch<EmployerUpdateController>();
     final leaveController = context.watch<LeaveManagementController>();
     final employer = authController.employer;
+    final isAdmin = authController.user.currentRole.id == 'admin';
 
-    // Load leave allocations when the widget builds
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!leaveController.hasLoadedAllocations(employer.id)) {
+      if (!leaveController.hasLoadedAllocations(employer.id) ||
+          !leaveController.hasLoadedAbsences(employer.id)) {
         leaveController.loadEmployeeLeaveAllocations(employer.id);
       }
     });
@@ -168,13 +159,11 @@ class _HomePageBodyState extends State<_HomePageBody>
                       CircleAvatar(
                         radius: 50,
                         backgroundColor: Colors.grey[200],
-                        backgroundImage:
-                            employer.photo != null && employer.photo!.isNotEmpty
-                                ? NetworkImage(employer.photo!)
-                                : null,
+                        backgroundImage: employer.photo != null && employer.photo!.isNotEmpty
+                            ? NetworkImage(employer.photo!)
+                            : null,
                         onBackgroundImageError: (exception, stackTrace) {
-                          print(
-                              'Erreur de chargement de l\'image : $exception');
+                          print('Erreur de chargement de l\'image : $exception');
                         },
                         child: employer.photo == null || employer.photo!.isEmpty
                             ? const Icon(Icons.person, size: 50)
@@ -186,7 +175,6 @@ class _HomePageBodyState extends State<_HomePageBody>
                         child: Text(AppLocalizations.of(context)!.upload_photo),
                       ),
                       const SizedBox(height: 20),
-                      // Leave Allocations Section
                       Card(
                         child: Padding(
                           padding: const EdgeInsets.all(16.0),
@@ -194,44 +182,36 @@ class _HomePageBodyState extends State<_HomePageBody>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
                                     AppLocalizations.of(context)!.leave_balance,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleMedium
-                                        ?.copyWith(
+                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                           fontWeight: FontWeight.bold,
                                         ),
                                   ),
                                   IconButton(
                                     onPressed: () => _showLeaveDetailsDialog(
                                       context,
-                                      leaveController
-                                          .getEmployeeAllocations(employer.id),
+                                      leaveController.getEmployeeAllocations(employer.id),
                                       employer.name ?? 'Employee',
                                     ),
                                     icon: const Icon(Icons.open_in_full),
-                                    tooltip: AppLocalizations.of(context)!
-                                        .view_details,
+                                    tooltip: AppLocalizations.of(context)!.view_details,
                                   ),
                                 ],
                               ),
                               const SizedBox(height: 8),
                               if (leaveController.isLoading(employer.id))
                                 const Center(child: CircularProgressIndicator())
-                              else if (leaveController.getError(employer.id) !=
-                                  null)
+                              else if (leaveController.getError(employer.id) != null)
                                 Text(
                                   leaveController.getError(employer.id)!,
                                   style: const TextStyle(color: Colors.red),
                                 )
                               else
                                 LeaveAllocationSummary(
-                                  allocations: leaveController
-                                      .getEmployeeAllocations(employer.id),
+                                  allocations: leaveController.getEmployeeAllocations(employer.id),
                                   showTitle: false,
                                 ),
                             ],
@@ -239,13 +219,64 @@ class _HomePageBodyState extends State<_HomePageBody>
                         ),
                       ),
                       const SizedBox(height: 20),
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    AppLocalizations.of(context)!.absence_summary,
+                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                  ),
+                                  IconButton(
+                                    onPressed: () => _showAbsenceDetailsDialog(
+                                      context,
+                                      leaveController.getEmployeeAbsences(employer.id),
+                                      employer.name ?? 'Employee',
+                                    ),
+                                    icon: const Icon(Icons.open_in_full),
+                                    tooltip: AppLocalizations.of(context)!.view_details,
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              if (leaveController.isLoading(employer.id))
+                                const Center(child: CircularProgressIndicator())
+                              else if (leaveController.getError(employer.id) != null)
+                                Text(
+                                  leaveController.getError(employer.id)!,
+                                  style: const TextStyle(color: Colors.red),
+                                )
+                              else
+                                AbsenceSummary(
+                                  absences: leaveController.getEmployeeAbsences(employer.id),
+                                  totalAbsenceHours: leaveController.getTotalAbsenceHours(employer.id),
+                                  showTitle: false,
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      if (isAdmin) ...[
+                        const SizedBox(height: 20),
+                        ElevatedButton.icon(
+                          onPressed: () => _showRecordAbsenceDialog(context, employer.id, employer.name ?? 'Employee'),
+                          icon: const Icon(Icons.add),
+                          label: Text(AppLocalizations.of(context)!.record_absence),
+                        ),
+                      ],
+                      const SizedBox(height: 20),
                       TextField(
                         controller: controller.nameController,
                         decoration: InputDecoration(
                           labelText: AppLocalizations.of(context)!.name,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                         ),
                       ),
                       const SizedBox(height: 20),
@@ -253,9 +284,7 @@ class _HomePageBodyState extends State<_HomePageBody>
                         controller: controller.contactController,
                         decoration: InputDecoration(
                           labelText: AppLocalizations.of(context)!.contact,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                         ),
                       ),
                       const SizedBox(height: 20),
@@ -263,9 +292,7 @@ class _HomePageBodyState extends State<_HomePageBody>
                         controller: controller.detailsController,
                         decoration: InputDecoration(
                           labelText: AppLocalizations.of(context)!.details,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                         ),
                       ),
                       const SizedBox(height: 20),
@@ -285,10 +312,7 @@ class _HomePageBodyState extends State<_HomePageBody>
                           padding: const EdgeInsets.only(top: 16.0),
                           child: Text(
                             controller.error!,
-                            style: const TextStyle(
-                              color: Colors.red,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
                           ),
                         ),
                     ],
@@ -297,16 +321,14 @@ class _HomePageBodyState extends State<_HomePageBody>
               );
   }
 
-  Widget _buildGenericProfile(
-      BuildContext context, AuthController authController, String userRole) {
+  Widget _buildGenericProfile(BuildContext context, AuthController authController, String userRole) {
     final leaveController = context.watch<LeaveManagementController>();
     final userName = authController.user.name;
     final userStatus = authController.user.status;
     final userId = authController.user.id;
 
-    // Load leave allocations when the widget builds
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!leaveController.hasLoadedAllocations(userId)) {
+      if (!leaveController.hasLoadedAllocations(userId) || !leaveController.hasLoadedAbsences(userId)) {
         leaveController.loadEmployeeLeaveAllocations(userId);
       }
     });
@@ -338,7 +360,6 @@ class _HomePageBodyState extends State<_HomePageBody>
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 20),
-            // Leave Allocations Section
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -350,10 +371,7 @@ class _HomePageBodyState extends State<_HomePageBody>
                       children: [
                         Text(
                           AppLocalizations.of(context)!.leave_balance,
-                          style:
-                              Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         IconButton(
                           onPressed: () => _showLeaveDetailsDialog(
@@ -376,8 +394,50 @@ class _HomePageBodyState extends State<_HomePageBody>
                       )
                     else
                       LeaveAllocationSummary(
-                        allocations:
-                            leaveController.getEmployeeAllocations(userId),
+                        allocations: leaveController.getEmployeeAllocations(userId),
+                        showTitle: false,
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          AppLocalizations.of(context)!.absence_summary,
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        IconButton(
+                          onPressed: () => _showAbsenceDetailsDialog(
+                            context,
+                            leaveController.getEmployeeAbsences(userId),
+                            userName ?? 'User',
+                          ),
+                          icon: const Icon(Icons.open_in_full),
+                          tooltip: AppLocalizations.of(context)!.view_details,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    if (leaveController.isLoading(userId))
+                      const Center(child: CircularProgressIndicator())
+                    else if (leaveController.getError(userId) != null)
+                      Text(
+                        leaveController.getError(userId)!,
+                        style: const TextStyle(color: Colors.red),
+                      )
+                    else
+                      AbsenceSummary(
+                        absences: leaveController.getEmployeeAbsences(userId),
+                        totalAbsenceHours: leaveController.getTotalAbsenceHours(userId),
                         showTitle: false,
                       ),
                   ],
@@ -391,22 +451,21 @@ class _HomePageBodyState extends State<_HomePageBody>
   }
 
   Future<void> _showLogoutDialog(BuildContext context) async {
+    final appLocalizations = AppLocalizations.of(context)!;
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text(AppLocalizations.of(context)!.logout),
-          content: Text(AppLocalizations.of(context)!.confirm_logout),
+          title: Text(appLocalizations.logout),
+          content: Text(appLocalizations.confirm_logout),
           actions: <Widget>[
             TextButton(
-              child: Text(AppLocalizations.of(context)!.cancel),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+              child: Text(appLocalizations.cancel),
+              onPressed: () => Navigator.of(context).pop(),
             ),
             TextButton(
-              child: Text(AppLocalizations.of(context)!.logout),
+              child: Text(appLocalizations.logout),
               onPressed: () async {
                 Navigator.of(context).pop();
                 await EmployerService().signOut();
@@ -421,16 +480,32 @@ class _HomePageBodyState extends State<_HomePageBody>
     );
   }
 
-  void _showLeaveDetailsDialog(
-      BuildContext context, List<LeaveAllocation> allocations, String name) {
+  void _showLeaveDetailsDialog(BuildContext context, List<LeaveAllocation> allocations, String name) {
     showDialog(
       context: context,
-      builder: (context) => LeaveAllocationDialog(
-        allocations: allocations,
-        employeeName: name,
-      ),
+      builder: (context) => LeaveAllocationDialog(allocations: allocations, employeeName: name),
     );
   }
+
+  void _showAbsenceDetailsDialog(BuildContext context, List<Absence> absences, String name) {
+    showDialog(
+      context: context,
+      builder: (context) => AbsenceDialog(absences: absences, employeeName: name),
+    );
+  }
+
+  void _showRecordAbsenceDialog(BuildContext context, String employeeId, String employeeName) {
+  showDialog(
+    context: context,
+    builder: (context) => RecordAbsenceDialog(
+      employeeId: employeeId,
+      employeeName: employeeName,
+      onAbsenceRecorded: () {
+        context.read<LeaveManagementController>().loadEmployeeLeaveAllocations(employeeId);
+      },
+    ),
+  );
+}
 }
 
 class EmployeeManagementView extends StatefulWidget {
@@ -441,6 +516,9 @@ class EmployeeManagementView extends StatefulWidget {
 }
 
 class _EmployeeManagementViewState extends State<EmployeeManagementView> {
+  String? _selectedEmployeeId;
+  Employer? _selectedEmployee;
+
   @override
   void initState() {
     super.initState();
@@ -452,6 +530,7 @@ class _EmployeeManagementViewState extends State<EmployeeManagementView> {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<EmployeeManagementController>();
+    final leaveController = context.watch<LeaveManagementController>();
     final appLocalizations = AppLocalizations.of(context)!;
 
     return Scaffold(
@@ -471,161 +550,416 @@ class _EmployeeManagementViewState extends State<EmployeeManagementView> {
                   ),
                 )
               : controller.employees.isEmpty
-                  ? Center(
-                      child: Text(appLocalizations.no_employees),
-                    )
-                  : RefreshIndicator(
-                      onRefresh: () => controller.loadEmployees(),
-                      child: ListView.builder(
-                        itemCount: controller.employees.length,
-                        itemBuilder: (context, index) {
-                          final employee = controller.employees[index];
-                          return Card(
-                            margin: const EdgeInsets.all(8.0),
-                            child: ListTile(
-                              leading: CircleAvatar(
-                                backgroundImage: employee.photo != null &&
-                                        employee.photo!.isNotEmpty
-                                    ? NetworkImage(employee.photo!)
-                                    : null,
-                                child: employee.photo == null ||
-                                        employee.photo!.isEmpty
-                                    ? const Icon(Icons.person)
-                                    : null,
-                              ),
-                              title: Text(
-                                  employee.name ?? appLocalizations.no_name),
-                              subtitle: Text(employee.contact ??
-                                  appLocalizations.no_contact),
-                              trailing: PopupMenuButton<String>(
-                                onSelected: (String value) {
-                                  switch (value) {
-                                    case 'edit':
-                                      _showEditEmployeeDialog(
-                                          context, employee);
-                                      break;
-                                    case 'delete':
-                                      _showDeleteEmployeeDialog(
-                                          context, employee);
-                                      break;
-                                  }
-                                },
-                                itemBuilder: (BuildContext context) => [
-                                  PopupMenuItem<String>(
-                                    value: 'edit',
-                                    child: Text(appLocalizations.edit),
-                                  ),
-                                  PopupMenuItem<String>(
-                                    value: 'delete',
-                                    child: Text(appLocalizations.delete),
-                                  ),
-                                ],
-                              ),
-                              onTap: () =>
-                                  _showEmployeeDetails(context, employee),
-                            ),
-                          );
-                        },
-                      ),
+                  ? Center(child: Text(appLocalizations.no_employees))
+                  : Row(
+                      children: [
+                        Container(
+                          width: 300,
+                          color: Theme.of(context).colorScheme.surfaceContainerLowest,
+                          child: _buildEmployeeList(controller.employees),
+                        ),
+                        Expanded(
+                          child: _selectedEmployee != null
+                              ? _buildEmployeeLeaveDetails(leaveController)
+                              : _buildWelcomeMessage(),
+                        ),
+                      ],
                     ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showCreateEmployeeDialog(context),
-        child: const Icon(Icons.add),
-      ),
     );
   }
 
-  void _showEmployeeDetails(BuildContext context, Employer employee) {
+  Widget _buildEmployeeList(List<Employer> employees) {
     final appLocalizations = AppLocalizations.of(context)!;
-    final leaveController = context.read<LeaveManagementController>();
-
-    // Load leave allocations for the employee
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!leaveController.hasLoadedAllocations(employee.id)) {
-        leaveController.loadEmployeeLeaveAllocations(employee.id);
-      }
-    });
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(employee.name ?? appLocalizations.employee_details),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Theme.of(context).primaryColor,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
             children: [
-              if (employee.photo != null && employee.photo!.isNotEmpty)
-                Center(
-                  child: CircleAvatar(
-                    radius: 40,
-                    backgroundImage: NetworkImage(employee.photo!),
-                  ),
-                ),
-              const SizedBox(height: 16),
-              Text('${appLocalizations.name}: ${employee.name ?? 'N/A'}'),
-              Text('${appLocalizations.contact}: ${employee.contact ?? 'N/A'}'),
-              Text('${appLocalizations.details}: ${employee.details ?? 'N/A'}'),
+              const Icon(Icons.people, color: Colors.white),
+              const SizedBox(width: 8),
               Text(
-                  '${appLocalizations.start_date}: ${employee.startDate != null ? DateFormat.yMMMd().format(employee.startDate!) : 'N/A'}'),
-              Text('${appLocalizations.status}: ${employee.status ?? 'N/A'}'),
-              const SizedBox(height: 16),
-              Consumer<LeaveManagementController>(
-                builder: (context, leaveController, child) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            appLocalizations.leave_balance,
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium
-                                ?.copyWith(fontWeight: FontWeight.bold),
-                          ),
-                          IconButton(
-                            onPressed: () => _showLeaveDetailsDialog(
-                              context,
-                              leaveController
-                                  .getEmployeeAllocations(employee.id),
-                              employee.name ?? 'Employee',
-                            ),
-                            icon: const Icon(Icons.open_in_full),
-                            tooltip: appLocalizations.view_details,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      if (leaveController.isLoading(employee.id))
-                        const Center(child: CircularProgressIndicator())
-                      else if (leaveController.getError(employee.id) != null)
-                        Text(
-                          leaveController.getError(employee.id)!,
-                          style: const TextStyle(color: Colors.red),
-                        )
-                      else
-                        LeaveAllocationSummary(
-                          allocations: leaveController
-                              .getEmployeeAllocations(employee.id),
-                          showTitle: false,
-                        ),
-                    ],
-                  );
-                },
+                appLocalizations.employees,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '${employees.length}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                icon: const Icon(Icons.add, color: Colors.white),
+                onPressed: () => _showCreateEmployeeDialog(context),
+                tooltip: appLocalizations.add_employee,
               ),
             ],
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(appLocalizations.close),
+        Expanded(
+          child: ListView.builder(
+            itemCount: employees.length,
+            itemBuilder: (context, index) {
+              final employee = employees[index];
+              final isSelected = _selectedEmployeeId == employee.id;
+              return Container(
+                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                child: Material(
+                  borderRadius: BorderRadius.circular(8),
+                  color: isSelected ? Theme.of(context).primaryColor.withOpacity(0.1) : Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: () => _selectEmployee(employee),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 20,
+                            backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+                            backgroundImage: employee.photo != null ? NetworkImage(employee.photo!) : null,
+                            child: employee.photo == null
+                                ? Text(
+                                    employee.name?.substring(0, 1).toUpperCase() ?? 'E',
+                                    style: TextStyle(
+                                      color: Theme.of(context).primaryColor,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  )
+                                : null,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  employee.name ?? appLocalizations.no_name,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: isSelected ? Theme.of(context).primaryColor : Colors.black87,
+                                  ),
+                                ),
+                                if (employee.status != null)
+                                  Text(
+                                    _getLocalizedStatus(employee.status!),
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: _getStatusColor(employee.status!),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          PopupMenuButton<String>(
+                            onSelected: (value) {
+                              switch (value) {
+                                case 'edit':
+                                  _showEditEmployeeDialog(context, employee);
+                                  break;
+                                case 'delete':
+                                  _showDeleteEmployeeDialog(context, employee);
+                                  break;
+                              }
+                            },
+                            itemBuilder: (context) => [
+                              PopupMenuItem(value: 'edit', child: Text(appLocalizations.edit)),
+                              PopupMenuItem(value: 'delete', child: Text(appLocalizations.delete)),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWelcomeMessage() {
+    final appLocalizations = AppLocalizations.of(context)!;
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.calendar_today,
+            size: 64,
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            appLocalizations.select_employee,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w500,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            appLocalizations.select_employee_message,
+            style: TextStyle(
+              fontSize: 14,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+            ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildEmployeeLeaveDetails(LeaveManagementController controller) {
+    final appLocalizations = AppLocalizations.of(context)!;
+    final employeeId = _selectedEmployee!.id;
+    final isLoading = controller.isLoading(employeeId);
+    final error = controller.getError(employeeId);
+
+    if (!controller.hasLoadedAllocations(employeeId) && !isLoading) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        controller.loadEmployeeLeaveAllocations(employeeId);
+      });
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildEmployeeHeader(),
+          const SizedBox(height: 24),
+          if (isLoading)
+            const Center(child: CircularProgressIndicator())
+          else if (error != null)
+            _buildErrorMessage(error)
+          else
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    LeaveAllocationSummary(
+                      allocations: controller.getEmployeeAllocations(employeeId),
+                      showTitle: true,
+                    ),
+                    const SizedBox(height: 32),
+                    AbsenceSummary(
+                      absences: controller.getEmployeeAbsences(employeeId),
+                      totalAbsenceHours: controller.getTotalAbsenceHours(employeeId),
+                      showTitle: true,
+                    ),
+                    if (context.read<AuthController>().user.currentRole.id == 'admin') ...[
+                      const SizedBox(height: 32),
+                      _buildAdminActions(controller),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmployeeHeader() {
+    final appLocalizations = AppLocalizations.of(context)!;
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Theme.of(context).primaryColor, Theme.of(context).primaryColorDark],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).primaryColor.withOpacity(0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 30,
+            backgroundColor: Colors.white.withOpacity(0.2),
+            backgroundImage: _selectedEmployee!.photo != null ? NetworkImage(_selectedEmployee!.photo!) : null,
+            child: _selectedEmployee!.photo == null
+                ? Text(
+                    _selectedEmployee!.name?.substring(0, 1).toUpperCase() ?? 'E',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  )
+                : null,
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _selectedEmployee!.name ?? appLocalizations.no_name,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  appLocalizations.schedule,
+                  style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 14),
+                ),
+                if (_selectedEmployee!.startDate != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    '${appLocalizations.start_date_label}: ${_formatDate(_selectedEmployee!.startDate!)}',
+                    style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              _getLocalizedStatus(_selectedEmployee!.status ?? 'active'),
+              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAdminActions(LeaveManagementController controller) {
+    final appLocalizations = AppLocalizations.of(context)!;
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.errorContainer,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Theme.of(context).colorScheme.error.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.admin_panel_settings, color: Theme.of(context).colorScheme.error),
+              const SizedBox(width: 8),
+              Text(
+                appLocalizations.admin_actions,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.error,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: () => _showRecordAbsenceDialog(context, _selectedEmployee!.id, _selectedEmployee!.name ?? 'Employee'),
+            icon: const Icon(Icons.add),
+            label: Text(appLocalizations.record_absence),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorMessage(String error) {
+    final appLocalizations = AppLocalizations.of(context)!;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.errorContainer,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Theme.of(context).colorScheme.error.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.error, color: Theme.of(context).colorScheme.error),
+          const SizedBox(width: 12),
+          Expanded(child: Text(error, style: TextStyle(color: Theme.of(context).colorScheme.error))),
+        ],
+      ),
+    );
+  }
+
+  void _selectEmployee(Employer employee) {
+    setState(() {
+      _selectedEmployeeId = employee.id;
+      _selectedEmployee = employee;
+    });
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'active':
+        return Colors.green;
+      case 'on leave':
+        return Colors.orange;
+      case 'resigned':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  String _getLocalizedStatus(String status) {
+    final appLocalizations = AppLocalizations.of(context)!;
+    switch (status.toLowerCase()) {
+      case 'active':
+        return appLocalizations.active;
+      case 'on leave':
+        return appLocalizations.on_leave;
+      case 'resigned':
+        return appLocalizations.resigned;
+      default:
+        return status;
+    }
+  }
+
+  String _formatDate(DateTime date) {
+    return DateFormat.yMd(Localizations.localeOf(context).languageCode).format(date);
   }
 
   void _showCreateEmployeeDialog(BuildContext context) {
@@ -640,8 +974,7 @@ class _EmployeeManagementViewState extends State<EmployeeManagementView> {
     final controller = context.read<EmployeeManagementController>();
     showDialog(
       context: context,
-      builder: (context) =>
-          EditEmployeeDialog(employee: employee, controller: controller),
+      builder: (context) => EditEmployeeDialog(employee: employee, controller: controller),
     );
   }
 
@@ -651,8 +984,7 @@ class _EmployeeManagementViewState extends State<EmployeeManagementView> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(appLocalizations.delete_employee),
-        content: Text(
-            '${appLocalizations.confirm_delete_employee} ${employee.name}'),
+        content: Text('${appLocalizations.confirm_delete_employee} ${employee.name}'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -661,9 +993,7 @@ class _EmployeeManagementViewState extends State<EmployeeManagementView> {
           TextButton(
             onPressed: () async {
               Navigator.of(context).pop();
-              await context
-                  .read<EmployeeManagementController>()
-                  .deleteEmployee(employee.id);
+              await context.read<EmployeeManagementController>().deleteEmployee(employee.id);
             },
             child: Text(appLocalizations.delete),
           ),
@@ -672,15 +1002,290 @@ class _EmployeeManagementViewState extends State<EmployeeManagementView> {
     );
   }
 
-  void _showLeaveDetailsDialog(
-      BuildContext context, List<LeaveAllocation> allocations, String name) {
+  // Added _showRecordAbsenceDialog method
+  void _showRecordAbsenceDialog(BuildContext context, String employeeId, String employeeName) {
     showDialog(
       context: context,
-      builder: (context) => LeaveAllocationDialog(
-        allocations: allocations,
-        employeeName: name,
+      builder: (context) => RecordAbsenceDialog(
+        employeeId: employeeId,
+        employeeName: employeeName,
+        onAbsenceRecorded: () {
+          context.read<LeaveManagementController>().loadEmployeeLeaveAllocations(employeeId);
+        },
       ),
     );
+  }
+}
+
+class RecordAbsenceDialog extends StatefulWidget {
+  final String employeeId;
+  final String employeeName;
+  final VoidCallback onAbsenceRecorded;
+
+  const RecordAbsenceDialog({
+    super.key,
+    required this.employeeId,
+    required this.employeeName,
+    required this.onAbsenceRecorded,
+  });
+
+  @override
+  State<RecordAbsenceDialog> createState() => _RecordAbsenceDialogState();
+}
+
+class _RecordAbsenceDialogState extends State<RecordAbsenceDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _reasonController = TextEditingController();
+  AbsenceType _selectedType = AbsenceType.illness;
+  DateTime _selectedDate = DateTime.now();
+  TimeOfDay _startTime = const TimeOfDay(hour: 10, minute: 0);
+  TimeOfDay _endTime = const TimeOfDay(hour: 17, minute: 0);
+  bool _isPartialDay = false;
+  bool _isSubmitting = false;
+
+  @override
+  void dispose() {
+    _reasonController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _selectDate(BuildContext context) async {
+    final appLocalizations = AppLocalizations.of(context)!;
+    final date = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now(),
+      helpText: appLocalizations.select_date,
+    );
+    if (date != null) {
+      setState(() => _selectedDate = date);
+    }
+  }
+
+  Future<void> _selectTime(BuildContext context, bool isStartTime) async {
+    final appLocalizations = AppLocalizations.of(context)!;
+    final time = await showTimePicker(
+      context: context,
+      initialTime: isStartTime ? _startTime : _endTime,
+      helpText: isStartTime ? 'start_time' : 'end_time',
+    );
+    if (time != null) {
+      setState(() {
+        if (isStartTime) {
+          _startTime = time;
+        } else {
+          _endTime = time;
+        }
+      });
+    }
+  }
+
+  double _calculateDuration() {
+    if (_isPartialDay) {
+      final startMinutes = _startTime.hour * 60 + _startTime.minute;
+      final endMinutes = _endTime.hour * 60 + _endTime.minute;
+      final duration = endMinutes - startMinutes;
+      return duration > 0 ? duration / 60.0 : 0.0;
+    } else {
+      return 7.0; // Full day = 7 hours
+    }
+  }
+
+  Future<void> _submitAbsence() async {
+    final appLocalizations = AppLocalizations.of(context)!;
+    if (!_formKey.currentState!.validate()) return;
+
+    final duration = _calculateDuration();
+    if (duration <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(appLocalizations.end_time_after_start),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      final leaveController = context.read<LeaveManagementController>();
+      await leaveController.recordAbsence(
+        employeeId: widget.employeeId,
+        type: _selectedType,
+        date: _selectedDate,
+        duration: Duration(minutes: (duration * 60).round()),
+        reason: _reasonController.text.trim().isEmpty ? null : _reasonController.text.trim(),
+      );
+
+      widget.onAbsenceRecorded();
+
+      if (mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(appLocalizations.absence_recorded_success),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${appLocalizations.error_generic}: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final appLocalizations = AppLocalizations.of(context)!;
+    return AlertDialog(
+      title: Text('${appLocalizations.record_absence} - ${widget.employeeName}'),
+      content: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButtonFormField<AbsenceType>(
+                value: _selectedType,
+                decoration: InputDecoration(
+                  labelText: appLocalizations.absence_type,
+                  border: const OutlineInputBorder(),
+                ),
+                items: AbsenceType.values
+                    .map((type) => DropdownMenuItem(
+                          value: type,
+                          child: Row(
+                            children: [
+                              Icon(_getAbsenceTypeIcon(type), size: 16),
+                              const SizedBox(width: 8),
+                              Text(type.displayName),
+                            ],
+                          ),
+                        ))
+                    .toList(),
+                onChanged: (value) => setState(() => _selectedType = value!),
+                validator: (value) => value == null ? appLocalizations.absence_type_required : null,
+              ),
+              const SizedBox(height: 16),
+              InkWell(
+                onTap: () => _selectDate(context),
+                child: InputDecorator(
+                  decoration: const InputDecoration(
+                    labelText: 'Date',
+                    border: OutlineInputBorder(),
+                    suffixIcon: Icon(Icons.calendar_today),
+                  ),
+                  child: Text(DateFormat('MMM dd, yyyy').format(_selectedDate)),
+                ),
+              ),
+              const SizedBox(height: 16),
+              CheckboxListTile(
+                title: Text('partial_day'),
+                subtitle: Text('partial_day_hint'),
+                value: _isPartialDay,
+                onChanged: (value) => setState(() => _isPartialDay = value!),
+                controlAffinity: ListTileControlAffinity.leading,
+              ),
+              if (_isPartialDay) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => _selectTime(context, true),
+                        child: InputDecorator(
+                          decoration: InputDecoration(
+                            labelText: 'start_time',
+                            border: const OutlineInputBorder(),
+                          ),
+                          child: Text(_startTime.format(context)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => _selectTime(context, false),
+                        child: InputDecorator(
+                          decoration: InputDecoration(
+                            labelText: 'end_time',
+                            border: const OutlineInputBorder(),
+                          ),
+                          child: Text(_endTime.format(context)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _reasonController,
+                decoration: InputDecoration(
+                  labelText: appLocalizations.reason,
+                  border: const OutlineInputBorder(),
+                  hintText: 'reason_hint',
+                ),
+                maxLines: 2,
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainer,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.access_time, size: 16),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${appLocalizations.duration}: ${_calculateDuration().toStringAsFixed(1)} ${appLocalizations.hours}',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
+          child: Text(appLocalizations.cancel),
+        ),
+        ElevatedButton(
+          onPressed: _isSubmitting ? null : _submitAbsence,
+          child: _isSubmitting
+              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+              : Text(appLocalizations.record),
+        ),
+      ],
+    );
+  }
+
+  IconData _getAbsenceTypeIcon(AbsenceType type) {
+    switch (type) {
+      case AbsenceType.illness:
+        return Icons.sick;
+      case AbsenceType.lateArrival:
+        return Icons.schedule;
+      case AbsenceType.approvedTimeOff:
+        return Icons.event_available;
+    }
   }
 }
 
@@ -718,30 +1323,27 @@ class _CreateEmployeeDialogState extends State<CreateEmployeeDialog> {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
-      setState(() {
-        _photo = pickedFile;
-      });
+      setState(() => _photo = pickedFile);
     }
   }
 
   Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
+    final appLocalizations = AppLocalizations.of(context)!;
+    final picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime.now(),
+      helpText: appLocalizations.select_date,
     );
     if (picked != null && picked != _startDate) {
-      setState(() {
-        _startDate = picked;
-      });
+      setState(() => _startDate = picked);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final appLocalizations = AppLocalizations.of(context)!;
-
     return AlertDialog(
       title: Text(appLocalizations.create_employee),
       content: SingleChildScrollView(
@@ -753,22 +1355,15 @@ class _CreateEmployeeDialogState extends State<CreateEmployeeDialog> {
               TextFormField(
                 controller: _nameController,
                 decoration: InputDecoration(labelText: appLocalizations.name),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return appLocalizations.name_required;
-                  }
-                  return null;
-                },
+                validator: (value) =>
+                    value == null || value.trim().isEmpty ? appLocalizations.name_required : null,
               ),
               TextFormField(
                 controller: _emailController,
                 decoration: InputDecoration(labelText: appLocalizations.email),
                 validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return appLocalizations.email_required;
-                  }
-                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                      .hasMatch(value)) {
+                  if (value == null || value.trim().isEmpty) return appLocalizations.email_required;
+                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
                     return appLocalizations.invalid_email;
                   }
                   return null;
@@ -776,30 +1371,22 @@ class _CreateEmployeeDialogState extends State<CreateEmployeeDialog> {
               ),
               TextFormField(
                 controller: _passwordController,
-                decoration:
-                    InputDecoration(labelText: appLocalizations.password),
+                decoration: InputDecoration(labelText: appLocalizations.password),
                 obscureText: true,
                 validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return appLocalizations.password_required;
-                  }
-                  if (value.length < 6) {
-                    return appLocalizations.password_too_short;
-                  }
+                  if (value == null || value.trim().isEmpty) return appLocalizations.password_required;
+                  if (value.length < 6) return appLocalizations.password_too_short;
                   return null;
                 },
               ),
               TextFormField(
                 controller: _contactController,
-                decoration:
-                    InputDecoration(labelText: appLocalizations.contact),
+                decoration: InputDecoration(labelText: appLocalizations.contact),
                 validator: (value) {
                   if (value != null && value.trim().isNotEmpty) {
                     final phoneRegExp = RegExp(r'^\+?[1-9]\d{1,14}$');
-                    final emailRegExp =
-                        RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-                    if (!phoneRegExp.hasMatch(value) &&
-                        !emailRegExp.hasMatch(value)) {
+                    final emailRegExp = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                    if (!phoneRegExp.hasMatch(value) && !emailRegExp.hasMatch(value)) {
                       return appLocalizations.invalid_contact;
                     }
                   }
@@ -808,8 +1395,7 @@ class _CreateEmployeeDialogState extends State<CreateEmployeeDialog> {
               ),
               TextFormField(
                 controller: _detailsController,
-                decoration:
-                    InputDecoration(labelText: appLocalizations.details),
+                decoration: InputDecoration(labelText: appLocalizations.details),
                 maxLines: 3,
               ),
               const SizedBox(height: 16),
@@ -817,39 +1403,20 @@ class _CreateEmployeeDialogState extends State<CreateEmployeeDialog> {
                 readOnly: true,
                 decoration: InputDecoration(
                   labelText: appLocalizations.start_date,
-                  hintText: _startDate == null
-                      ? 'Select start date'
-                      : DateFormat.yMMMd().format(_startDate!),
+                  hintText: _startDate == null ? appLocalizations.select_date : DateFormat.yMMMd().format(_startDate!),
                 ),
                 onTap: () => _selectDate(context),
-                validator: (value) {
-                  if (_startDate == null) {
-                    return appLocalizations.start_date_required;
-                  }
-                  return null;
-                },
+                validator: (value) => _startDate == null ? appLocalizations.start_date_required : null,
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<Status>(
                 value: _status,
                 decoration: InputDecoration(labelText: appLocalizations.status),
-                items: Status.values.map((status) {
-                  return DropdownMenuItem(
-                    value: status,
-                    child: Text(status.value),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _status = value;
-                  });
-                },
-                validator: (value) {
-                  if (value == null) {
-                    return appLocalizations.status_required;
-                  }
-                  return null;
-                },
+                items: Status.values
+                    .map((status) => DropdownMenuItem(value: status, child: Text(status.value)))
+                    .toList(),
+                onChanged: (value) => setState(() => _status = value),
+                validator: (value) => value == null ? appLocalizations.status_required : null,
               ),
               const SizedBox(height: 16),
               Row(
@@ -878,20 +1445,13 @@ class _CreateEmployeeDialogState extends State<CreateEmployeeDialog> {
                 name: _nameController.text,
                 email: _emailController.text,
                 password: _passwordController.text,
-                contact: _contactController.text.isEmpty
-                    ? null
-                    : _contactController.text,
-                details: _detailsController.text.isEmpty
-                    ? null
-                    : _detailsController.text,
+                contact: _contactController.text.isEmpty ? null : _contactController.text,
+                details: _detailsController.text.isEmpty ? null : _detailsController.text,
                 startDate: _startDate,
                 status: _status,
               );
               if (context.mounted) {
-                // Initialize leave allocations for the new employee
-                await LeaveService().initializeEmployeeLeaveAllocations(
-                    _emailController
-                        .text); // Use email as employeeId for new user
+                await LeaveService().initializeEmployeeLeaveAllocations(_emailController.text);
                 Navigator.of(context).pop();
               }
             }
@@ -907,8 +1467,7 @@ class EditEmployeeDialog extends StatefulWidget {
   final Employer employee;
   final EmployeeManagementController controller;
 
-  const EditEmployeeDialog(
-      {super.key, required this.employee, required this.controller});
+  const EditEmployeeDialog({super.key, required this.employee, required this.controller});
 
   @override
   State<EditEmployeeDialog> createState() => _EditEmployeeDialogState();
@@ -930,9 +1489,7 @@ class _EditEmployeeDialogState extends State<EditEmployeeDialog> {
     _contactController = TextEditingController(text: widget.employee.contact);
     _detailsController = TextEditingController(text: widget.employee.details);
     _startDate = widget.employee.startDate;
-    _status = widget.employee.status != null
-        ? Status.fromString(widget.employee.status!)
-        : Status.active;
+    _status = widget.employee.status != null ? Status.fromString(widget.employee.status!) : Status.active;
   }
 
   @override
@@ -947,30 +1504,27 @@ class _EditEmployeeDialogState extends State<EditEmployeeDialog> {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
-      setState(() {
-        _photo = pickedFile;
-      });
+      setState(() => _photo = pickedFile);
     }
   }
 
   Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
+    final appLocalizations = AppLocalizations.of(context)!;
+    final picked = await showDatePicker(
       context: context,
       initialDate: _startDate ?? DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime.now(),
+      helpText: appLocalizations.select_date,
     );
     if (picked != null && picked != _startDate) {
-      setState(() {
-        _startDate = picked;
-      });
+      setState(() => _startDate = picked);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final appLocalizations = AppLocalizations.of(context)!;
-
     return AlertDialog(
       title: Text(appLocalizations.edit_employee),
       content: SingleChildScrollView(
@@ -979,33 +1533,22 @@ class _EditEmployeeDialogState extends State<EditEmployeeDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (widget.employee.photo != null &&
-                  widget.employee.photo!.isNotEmpty)
-                CircleAvatar(
-                  radius: 30,
-                  backgroundImage: NetworkImage(widget.employee.photo!),
-                ),
+              if (widget.employee.photo != null && widget.employee.photo!.isNotEmpty)
+                CircleAvatar(radius: 30, backgroundImage: NetworkImage(widget.employee.photo!)),
               TextFormField(
                 controller: _nameController,
                 decoration: InputDecoration(labelText: appLocalizations.name),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return appLocalizations.name_required;
-                  }
-                  return null;
-                },
+                validator: (value) =>
+                    value == null || value.trim().isEmpty ? appLocalizations.name_required : null,
               ),
               TextFormField(
                 controller: _contactController,
-                decoration:
-                    InputDecoration(labelText: appLocalizations.contact),
+                decoration: InputDecoration(labelText: appLocalizations.contact),
                 validator: (value) {
                   if (value != null && value.trim().isNotEmpty) {
-                    final phoneRegExp = RegExp(r'^\+?[1-9]\d{1,14}$');
-                    final emailRegExp =
-                        RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-                    if (!phoneRegExp.hasMatch(value) &&
-                        !emailRegExp.hasMatch(value)) {
+                    const phoneRegExp = r'^\+?[1-9]\d{1,14}$';
+                    const emailRegExp = r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$';
+                    if (!RegExp(phoneRegExp).hasMatch(value) && !RegExp(emailRegExp).hasMatch(value)) {
                       return appLocalizations.invalid_contact;
                     }
                   }
@@ -1014,8 +1557,7 @@ class _EditEmployeeDialogState extends State<EditEmployeeDialog> {
               ),
               TextFormField(
                 controller: _detailsController,
-                decoration:
-                    InputDecoration(labelText: appLocalizations.details),
+                decoration: InputDecoration(labelText: appLocalizations.details),
                 maxLines: 3,
               ),
               const SizedBox(height: 16),
@@ -1023,39 +1565,20 @@ class _EditEmployeeDialogState extends State<EditEmployeeDialog> {
                 readOnly: true,
                 decoration: InputDecoration(
                   labelText: appLocalizations.start_date,
-                  hintText: _startDate == null
-                      ? 'Select start date'
-                      : DateFormat.yMMMd().format(_startDate!),
+                  hintText: _startDate == null ? appLocalizations.select_date : DateFormat.yMMMd().format(_startDate!),
                 ),
                 onTap: () => _selectDate(context),
-                validator: (value) {
-                  if (_startDate == null) {
-                    return appLocalizations.start_date_required;
-                  }
-                  return null;
-                },
+                validator: (value) => _startDate == null ? appLocalizations.start_date_required : null,
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<Status>(
                 value: _status,
                 decoration: InputDecoration(labelText: appLocalizations.status),
-                items: Status.values.map((status) {
-                  return DropdownMenuItem(
-                    value: status,
-                    child: Text(status.value),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _status = value;
-                  });
-                },
-                validator: (value) {
-                  if (value == null) {
-                    return appLocalizations.status_required;
-                  }
-                  return null;
-                },
+                items: Status.values
+                    .map((status) => DropdownMenuItem(value: status, child: Text(status.value)))
+                    .toList(),
+                onChanged: (value) => setState(() => _status = value),
+                validator: (value) => value == null ? appLocalizations.status_required : null,
               ),
               const SizedBox(height: 16),
               Row(
@@ -1083,12 +1606,8 @@ class _EditEmployeeDialogState extends State<EditEmployeeDialog> {
               await widget.controller.updateEmployee(
                 id: widget.employee.id,
                 name: _nameController.text,
-                contact: _contactController.text.isEmpty
-                    ? null
-                    : _contactController.text,
-                details: _detailsController.text.isEmpty
-                    ? null
-                    : _detailsController.text,
+                contact: _contactController.text.isEmpty ? null : _contactController.text,
+                details: _detailsController.text.isEmpty ? null : _detailsController.text,
                 photo: _photo,
                 startDate: _startDate,
                 status: _status,
