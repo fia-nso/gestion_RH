@@ -22,7 +22,7 @@ class LeaveAllocationCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    
+
     Color getLeaveTypeColor() {
       switch (allocation.type) {
         case LeaveType.sick:
@@ -72,7 +72,8 @@ class LeaveAllocationCard extends StatelessWidget {
                 ),
                 if (!isCompact)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: getStatusColor().withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
@@ -90,22 +91,22 @@ class LeaveAllocationCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            
+
             // Progress bar
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
               child: LinearProgressIndicator(
-                value: allocation.allocatedDays > 0 
-                    ? allocation.usedDays / allocation.allocatedDays 
+                value: allocation.allocatedDays > 0
+                    ? allocation.usedDays / allocation.allocatedDays
                     : 0,
                 backgroundColor: colorScheme.surfaceVariant,
                 valueColor: AlwaysStoppedAnimation<Color>(getLeaveTypeColor()),
                 minHeight: 6,
               ),
             ),
-            
+
             const SizedBox(height: 12),
-            
+
             // Statistics
             if (isCompact)
               Row(
@@ -185,15 +186,14 @@ class _StatisticItem extends StatelessWidget {
         Text(
           label,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-            fontSize: 11,
-          ),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontSize: 11,
+              ),
         ),
       ],
     );
   }
 }
-
 
 extension LeaveTypeExtension on LeaveType {
   String get displayName {
@@ -213,6 +213,7 @@ extension LeaveTypeExtension on LeaveType {
     }
   }
 }
+
 class LeaveAllocationDialog extends StatelessWidget {
   final List<LeaveAllocation> allocations;
   final String employeeName;
@@ -234,26 +235,34 @@ class LeaveAllocationDialog extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: allocations.isEmpty
               ? [Text(appLocalizations.no_leave_allocations)]
-              : allocations.map((allocation) => Card(
-                    margin: const EdgeInsets.symmetric(vertical: 4.0),
-                    child: ListTile(
-                      title: Text(allocation.type.displayName),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('${appLocalizations.allocated}: ${allocation.allocatedDays} ${appLocalizations.days}'),
-                          Text('${appLocalizations.used}: ${allocation.usedDays} ${appLocalizations.days}'),
-                          Text(
-                            '${appLocalizations.remaining}: ${allocation.allocatedDays - allocation.usedDays} ${appLocalizations.days}',
-                            style: TextStyle(
-                              color: allocation.allocatedDays - allocation.usedDays <= 0 ? Colors.red : null,
-                            ),
+              : allocations
+                  .map((allocation) => Card(
+                        margin: const EdgeInsets.symmetric(vertical: 4.0),
+                        child: ListTile(
+                          title: Text(allocation.type.displayName),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                  '${appLocalizations.allocated}: ${allocation.allocatedDays} ${appLocalizations.days}'),
+                              Text(
+                                  '${appLocalizations.used}: ${allocation.usedDays} ${appLocalizations.days}'),
+                              Text(
+                                '${appLocalizations.remaining}: ${allocation.allocatedDays - allocation.usedDays} ${appLocalizations.days}',
+                                style: TextStyle(
+                                  color: allocation.allocatedDays -
+                                              allocation.usedDays <=
+                                          0
+                                      ? Colors.red
+                                      : null,
+                                ),
+                              ),
+                              Text('${'year'}: ${allocation.year}'),
+                            ],
                           ),
-                          Text('${'year'}: ${allocation.year}'),
-                        ],
-                      ),
-                    ),
-                  )).toList(),
+                        ),
+                      ))
+                  .toList(),
         ),
       ),
       actions: [
@@ -290,8 +299,8 @@ class LeaveAllocationSummary extends StatelessWidget {
                 Text(
                   'Leave Balance',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
               const SizedBox(height: 16),
               const Text(
@@ -323,19 +332,19 @@ class LeaveAllocationSummary extends StatelessWidget {
             child: Text(
               'Leave Balance',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
           ),
-        
+
         // Current Year Section
         if (currentYearAllocations.isNotEmpty) ...[
           Text(
             'Current Year ($currentYear)',
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).primaryColor,
-            ),
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).primaryColor,
+                ),
           ),
           const SizedBox(height: 8),
           _buildAllocationCards(context, currentYearAllocations),
@@ -346,23 +355,25 @@ class LeaveAllocationSummary extends StatelessWidget {
           const SizedBox(height: 16),
           ...allocationsByYear.entries
               .where((entry) => entry.key != currentYear)
-              .map((entry) => _buildYearSection(context, entry.key, entry.value))
+              .map(
+                  (entry) => _buildYearSection(context, entry.key, entry.value))
               .toList(),
         ],
       ],
     );
   }
 
-  Widget _buildYearSection(BuildContext context, int year, List<LeaveAllocation> yearAllocations) {
+  Widget _buildYearSection(
+      BuildContext context, int year, List<LeaveAllocation> yearAllocations) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Year $year',
           style: Theme.of(context).textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w600,
-            color: Colors.grey[600],
-          ),
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[600],
+              ),
         ),
         const SizedBox(height: 8),
         _buildAllocationCards(context, yearAllocations),
@@ -371,16 +382,19 @@ class LeaveAllocationSummary extends StatelessWidget {
     );
   }
 
-  Widget _buildAllocationCards(BuildContext context, List<LeaveAllocation> yearAllocations) {
+  Widget _buildAllocationCards(
+      BuildContext context, List<LeaveAllocation> yearAllocations) {
     return Column(
-      children: yearAllocations.map((allocation) => _buildLeaveCard(context, allocation)).toList(),
+      children: yearAllocations
+          .map((allocation) => _buildLeaveCard(context, allocation))
+          .toList(),
     );
   }
 
   Widget _buildLeaveCard(BuildContext context, LeaveAllocation allocation) {
     final usagePercentage = allocation.usagePercentage;
     final isOverused = allocation.usedDays > allocation.allocatedDays;
-    
+
     Color progressColor;
     if (isOverused) {
       progressColor = Colors.red;
@@ -413,8 +427,8 @@ class LeaveAllocationSummary extends StatelessWidget {
                     Text(
                       allocation.type.displayName,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                            fontWeight: FontWeight.w600,
+                          ),
                     ),
                   ],
                 ),
@@ -512,10 +526,13 @@ class AbsenceSummary extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (showTitle)
-            Text(
-              'Absence Summary',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                'Absence Summary',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
               ),
             ),
           const SizedBox(height: 16),
@@ -537,7 +554,7 @@ class AbsenceSummary extends StatelessWidget {
     final Map<AbsenceType, double> hoursByType = {};
     for (final entry in absencesByType.entries) {
       final totalMinutes = entry.value.fold<int>(
-        0, 
+        0,
         (sum, absence) => sum + absence.duration.inMinutes,
       );
       hoursByType[entry.key] = totalMinutes / 60.0;
@@ -547,16 +564,20 @@ class AbsenceSummary extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (showTitle)
-          Text(
-            'Absence Summary',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Text(
+              'Absence Summary',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
           ),
-        const SizedBox(height: 8),
-        
+        const SizedBox(height: 4),
+
         // Total hours card
         Card(
+          margin: const EdgeInsets.all(8.0),
           color: Colors.orange[50],
           child: Padding(
             padding: const EdgeInsets.all(12.0),
@@ -570,15 +591,15 @@ class AbsenceSummary extends StatelessWidget {
                     Text(
                       'Total Absence Hours',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w500,
-                      ),
+                            fontWeight: FontWeight.w500,
+                          ),
                     ),
                     Text(
                       '${totalAbsenceHours.toStringAsFixed(1)} hours',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Colors.orange[700],
-                        fontWeight: FontWeight.bold,
-                      ),
+                            color: Colors.orange[700],
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
                   ],
                 ),
@@ -586,32 +607,37 @@ class AbsenceSummary extends StatelessWidget {
             ),
           ),
         ),
-        
+
         const SizedBox(height: 8),
-        
+
         // Breakdown by type
-        ...absencesByType.entries.map((entry) => 
-          _buildAbsenceTypeCard(context, entry.key, entry.value, hoursByType[entry.key]!)
-        ).toList(),
-        
+        ...absencesByType.entries
+            .map((entry) => _buildAbsenceTypeCard(
+                context, entry.key, entry.value, hoursByType[entry.key]!))
+            .toList(),
+
         if (showDetailedView) ...[
           const SizedBox(height: 16),
           Text(
             'Recent Absences',
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+                  fontWeight: FontWeight.w600,
+                ),
           ),
           const SizedBox(height: 8),
-          ...absences.take(5).map((absence) => _buildAbsenceDetailCard(context, absence)).toList(),
+          ...absences
+              .take(5)
+              .map((absence) => _buildAbsenceDetailCard(context, absence))
+              .toList(),
         ],
       ],
     );
   }
 
-  Widget _buildAbsenceTypeCard(BuildContext context, AbsenceType type, List<Absence> typeAbsences, double hours) {
+  Widget _buildAbsenceTypeCard(BuildContext context, AbsenceType type,
+      List<Absence> typeAbsences, double hours) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 8.0),
+      margin: const EdgeInsets.all(8),
       child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Row(
@@ -629,14 +655,14 @@ class AbsenceSummary extends StatelessWidget {
                   Text(
                     type.displayName,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
+                          fontWeight: FontWeight.w500,
+                        ),
                   ),
                   Text(
                     '${typeAbsences.length} incidents • ${hours.toStringAsFixed(1)} hours',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.grey[600],
-                    ),
+                          color: Colors.grey[600],
+                        ),
                   ),
                 ],
               ),
@@ -649,7 +675,6 @@ class AbsenceSummary extends StatelessWidget {
 
   Widget _buildAbsenceDetailCard(BuildContext context, Absence absence) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 4.0),
       child: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Row(
@@ -667,15 +692,15 @@ class AbsenceSummary extends StatelessWidget {
                   Text(
                     DateFormat('MMM dd, yyyy').format(absence.date),
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
+                          fontWeight: FontWeight.w500,
+                        ),
                   ),
                   if (absence.reason != null && absence.reason!.isNotEmpty)
                     Text(
                       absence.reason!,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.grey[600],
-                      ),
+                            color: Colors.grey[600],
+                          ),
                     ),
                 ],
               ),
@@ -683,9 +708,9 @@ class AbsenceSummary extends StatelessWidget {
             Text(
               '${(absence.duration.inMinutes / 60).toStringAsFixed(1)}h',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: _getAbsenceTypeColor(absence.type),
-                fontWeight: FontWeight.w500,
-              ),
+                    color: _getAbsenceTypeColor(absence.type),
+                    fontWeight: FontWeight.w500,
+                  ),
             ),
           ],
         ),
@@ -733,7 +758,7 @@ class RecordAbsenceForm extends StatefulWidget {
 class _RecordAbsenceFormState extends State<RecordAbsenceForm> {
   final _formKey = GlobalKey<FormState>();
   final _reasonController = TextEditingController();
-  
+
   AbsenceType _selectedType = AbsenceType.illness;
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _startTime = const TimeOfDay(hour: 10, minute: 0);
@@ -759,11 +784,11 @@ class _RecordAbsenceFormState extends State<RecordAbsenceForm> {
               Text(
                 'Record Absence',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                      fontWeight: FontWeight.bold,
+                    ),
               ),
               const SizedBox(height: 16),
-              
+
               // Absence Type
               DropdownButtonFormField<AbsenceType>(
                 value: _selectedType,
@@ -771,23 +796,25 @@ class _RecordAbsenceFormState extends State<RecordAbsenceForm> {
                   labelText: 'Absence Type',
                   border: OutlineInputBorder(),
                 ),
-                items: AbsenceType.values.map((type) => 
-                  DropdownMenuItem(
-                    value: type,
-                    child: Row(
-                      children: [
-                        Icon(_getAbsenceTypeIcon(type), size: 16),
-                        const SizedBox(width: 8),
-                        Text(type.displayName),
-                      ],
-                    ),
-                  ),
-                ).toList(),
+                items: AbsenceType.values
+                    .map(
+                      (type) => DropdownMenuItem(
+                        value: type,
+                        child: Row(
+                          children: [
+                            Icon(_getAbsenceTypeIcon(type), size: 16),
+                            const SizedBox(width: 8),
+                            Text(type.displayName),
+                          ],
+                        ),
+                      ),
+                    )
+                    .toList(),
                 onChanged: (value) => setState(() => _selectedType = value!),
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Date
               InkWell(
                 onTap: () => _selectDate(context),
@@ -800,18 +827,19 @@ class _RecordAbsenceFormState extends State<RecordAbsenceForm> {
                   child: Text(DateFormat('MMM dd, yyyy').format(_selectedDate)),
                 ),
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Partial day checkbox
               CheckboxListTile(
                 title: const Text('Partial Day Absence'),
-                subtitle: const Text('Select specific hours instead of full day'),
+                subtitle:
+                    const Text('Select specific hours instead of full day'),
                 value: _isPartialDay,
                 onChanged: (value) => setState(() => _isPartialDay = value!),
                 controlAffinity: ListTileControlAffinity.leading,
               ),
-              
+
               if (_isPartialDay) ...[
                 const SizedBox(height: 8),
                 Row(
@@ -844,9 +872,9 @@ class _RecordAbsenceFormState extends State<RecordAbsenceForm> {
                   ],
                 ),
               ],
-              
+
               const SizedBox(height: 16),
-              
+
               // Reason
               TextFormField(
                 controller: _reasonController,
@@ -857,9 +885,9 @@ class _RecordAbsenceFormState extends State<RecordAbsenceForm> {
                 ),
                 maxLines: 2,
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Duration display
               Container(
                 padding: const EdgeInsets.all(12),
@@ -874,15 +902,15 @@ class _RecordAbsenceFormState extends State<RecordAbsenceForm> {
                     Text(
                       'Duration: ${_calculateDuration().toStringAsFixed(1)} hours',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w500,
-                      ),
+                            fontWeight: FontWeight.w500,
+                          ),
                     ),
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Submit button
               SizedBox(
                 width: double.infinity,
@@ -951,7 +979,7 @@ class _RecordAbsenceFormState extends State<RecordAbsenceForm> {
 
   Future<void> _submitAbsence() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     final duration = _calculateDuration();
     if (duration <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -964,15 +992,15 @@ class _RecordAbsenceFormState extends State<RecordAbsenceForm> {
     }
 
     final leaveController = context.read<LeaveManagementController>();
-    
+
     try {
       await leaveController.recordAbsence(
         employeeId: widget.employeeId,
         type: _selectedType,
         date: _selectedDate,
         duration: Duration(minutes: (duration * 60).round()),
-        reason: _reasonController.text.trim().isEmpty 
-            ? null 
+        reason: _reasonController.text.trim().isEmpty
+            ? null
             : _reasonController.text.trim(),
       );
 
@@ -993,7 +1021,7 @@ class _RecordAbsenceFormState extends State<RecordAbsenceForm> {
             backgroundColor: Colors.green,
           ),
         );
-        
+
         widget.onAbsenceRecorded?.call();
       }
     } catch (e) {
@@ -1008,7 +1036,6 @@ class _RecordAbsenceFormState extends State<RecordAbsenceForm> {
     }
   }
 }
-
 
 class AbsenceDialog extends StatelessWidget {
   final List<Absence> absences;
@@ -1031,14 +1058,16 @@ class AbsenceDialog extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: absences.isEmpty
               ? [Text(appLocalizations.no_absences)]
-              : absences.map((absence) => ListTile(
-                    title: Text(absence.type.displayName),
-                    subtitle: Text(
-                      'Date: ${DateFormat.yMMMd().format(absence.date)}\n'
-                      'Duration: ${(absence.duration.inMinutes / 60.0).toStringAsFixed(2)} hrs\n'
-                      'Reason: ${absence.reason ?? 'N/A'}',
-                    ),
-                  )).toList(),
+              : absences
+                  .map((absence) => ListTile(
+                        title: Text(absence.type.displayName),
+                        subtitle: Text(
+                          'Date: ${DateFormat.yMMMd().format(absence.date)}\n'
+                          'Duration: ${(absence.duration.inMinutes / 60.0).toStringAsFixed(2)} hrs\n'
+                          'Reason: ${absence.reason ?? 'N/A'}',
+                        ),
+                      ))
+                  .toList(),
         ),
       ),
       actions: [
