@@ -290,4 +290,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get error_generic => 'حدث خطأ';
+
+  @override
+  String get projects => 'المشاريع';
 }

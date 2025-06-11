@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:frontend/controller_provider/update_provider.dart';
@@ -5,6 +7,7 @@ import 'package:frontend/l10n/generated/app_localizations.dart';
 import 'package:frontend/models/auth_model.dart';
 import 'package:frontend/services/auth_service.dart';
 import 'package:frontend/uttils/navigator.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import '../controller_provider/auth_provider.dart';
 import '../controller_provider/employee_management_controller.dart';
@@ -16,7 +19,7 @@ import '../services/leave_service.dart';
 import '../widgets/leave_display_widgets.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:google_nav_bar/google_nav_bar.dart'; // Ajout du package
+import 'package:google_nav_bar/google_nav_bar.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -45,6 +48,23 @@ class _HomePageBody extends StatefulWidget {
 class _HomePageBodyState extends State<_HomePageBody> {
   int _selectedIndex = 0; // Index pour suivre la page active
 
+  // Variables pour la gestion des projets
+  TextEditingController _projectNameController = TextEditingController();
+  TextEditingController _projectDescriptionController = TextEditingController();
+  DateTime? _projectStartDate;
+  DateTime? _projectEndDate;
+  String _projectSize = 'medium';
+  String _projectScope = '';
+  String _projectStatus = 'Planning';
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void dispose() {
+    _projectNameController.dispose();
+    _projectDescriptionController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final localeController = Provider.of<LocaleProvider>(context);
@@ -68,6 +88,17 @@ class _HomePageBodyState extends State<_HomePageBody> {
       );
     }
 
+    // Add Project Management page for relevant roles (e.g., admin or employer)
+    if (userRole == 'admin' || userRole == 'employer') {
+      pages.add(_buildProjectManagement(context));
+      navButtons.add(
+        GButton(
+          icon: Icons.work,
+          text: AppLocalizations.of(context)!.projects,
+          semanticLabel: AppLocalizations.of(context)!.projects,
+        ),
+      );
+    }
     // Ajouter la page "Profile" en second pour tous les utilisateurs
     pages.add(
         _buildProfileTab(context, authController, userRole)); // Page Profile
@@ -140,6 +171,194 @@ class _HomePageBodyState extends State<_HomePageBody> {
         return appLocalizations.assistant;
       default:
         return 'Dashboard';
+    }
+  }
+
+  Widget _buildProjectManagement(BuildContext context) {
+    return Form(
+      key: _formKey,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Gestion des Projets',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 20),
+            TextFormField(
+              controller: _projectNameController,
+              decoration: InputDecoration(labelText: 'Nom du projet'),
+              validator: (value) => value!.isEmpty ? 'Le nom est requis' : null,
+            ),
+            const SizedBox(height: 10),
+            TextFormField(
+              controller: _projectDescriptionController,
+              decoration: InputDecoration(labelText: 'Description'),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => _selectProjectDate(context, true),
+                    child: Text(_projectStartDate == null
+                        ? 'Sélectionner la date de début'
+                        : 'Début: ${_projectStartDate!.toLocal()}'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => _selectProjectDate(context, false),
+                    child: Text(_projectEndDate == null
+                        ? 'Sélectionner la date de fin'
+                        : 'Fin: ${_projectEndDate!.toLocal()}'),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            DropdownButtonFormField<String>(
+              value: _projectSize == 0 ? null : _projectSize.toString(),
+              items: ['small', 'medium', 'large']
+                  .map((size) => DropdownMenuItem(
+                        value: size,
+                        child: Text(size),
+                      ))
+                  .toList(),
+              onChanged: (value) =>
+                  setState(() => _projectSize = value ?? 'medium'),
+              decoration: InputDecoration(labelText: 'Taille du projet'),
+              validator: (value) =>
+                  value == null ? 'La taille est requise' : null,
+            ),
+            const SizedBox(height: 10),
+            TextFormField(
+              decoration: InputDecoration(labelText: 'Portée du projet'),
+              onChanged: (value) => _projectScope = value,
+            ),
+            const SizedBox(height: 10),
+            DropdownButtonFormField<String>(
+              value: _projectStatus,
+              items: ['Planning', 'Active', 'On Hold', 'Completed']
+                  .map((status) => DropdownMenuItem(
+                        value: status,
+                        child: Text(status),
+                      ))
+                  .toList(),
+              onChanged: (value) => setState(() => _projectStatus = value!),
+              decoration: InputDecoration(labelText: 'Statut du projet'),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _submitProjectForm,
+              child: Text('Soumettre'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _selectProjectDate(
+      BuildContext context, bool isStartDate) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null) {
+      setState(() {
+        if (isStartDate) {
+          _projectStartDate = picked;
+        } else {
+          _projectEndDate = picked;
+        }
+      });
+    }
+  }
+
+  Future<void> _submitProjectForm() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    if (_projectStartDate == null || _projectEndDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content:
+                Text('Veuillez sélectionner les dates de début et de fin')),
+      );
+      return;
+    }
+
+    if (_projectStartDate!.isAfter(_projectEndDate!)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content:
+                Text('La date de début doit être antérieure à la date de fin')),
+      );
+      return;
+    }
+
+    final authController = context.read<AuthController>();
+    final token = authController.user.token;
+    if (token == null || token.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text(
+                'Aucun token d\'authentification trouvé. Veuillez vous connecter.')),
+      );
+      return;
+    }
+
+    print({
+      'name': _projectNameController.text,
+      'description': _projectDescriptionController.text,
+      'startDate': _projectStartDate?.toIso8601String(),
+      'endDate': _projectEndDate?.toIso8601String(),
+      'size': _projectSize,
+      'scope': _projectScope,
+      'status': _projectStatus,
+    });
+
+    final response = await http.post(
+      Uri.parse('http://192.168.100.54:3000/projects'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token', // Inclure le token
+      },
+      body: jsonEncode({
+        'name': _projectNameController.text,
+        'description': _projectDescriptionController.text,
+        'startDate': _projectStartDate?.toIso8601String(),
+        'endDate': _projectEndDate?.toIso8601String(),
+        'size': _projectSize,
+        'scope': _projectScope,
+        'status': _projectStatus,
+      }),
+    );
+
+    if (response.statusCode == 201) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Projet créé avec succès')),
+      );
+      _projectNameController.clear();
+      _projectDescriptionController.clear();
+      setState(() {
+        _projectStartDate = null;
+        _projectEndDate = null;
+        _projectSize = 'medium';
+        _projectScope = '';
+        _projectStatus = 'Planning';
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur: ${response.body}')),
+      );
     }
   }
 

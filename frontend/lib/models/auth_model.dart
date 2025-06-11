@@ -20,6 +20,8 @@ abstract class AuthModel {
   AuthModel copyWith();
 
   static String get usersTableName => "users";
+
+  get token => null;
 }
 
 enum Status {
@@ -59,7 +61,8 @@ class Employer extends AuthModel {
 
   factory Employer.fromMap(Map<String, dynamic> map) {
     final roleList = List<Map<String, dynamic>>.from(map['roles'] ?? []);
-    final roles = roleList.map((item) => AppRole.fromMap(item['app_role'])).toList();
+    final roles =
+        roleList.map((item) => AppRole.fromMap(item['app_role'])).toList();
 
     final employerData = map['employer'] as Map<String, dynamic>? ?? {};
     return Employer(

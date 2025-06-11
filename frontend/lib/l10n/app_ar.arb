@@ -63,7 +63,7 @@
   "duration_exceeds_workday": "لا يمكن أن تتجاوز المدة 7 ساعات",
   "record": "تسجيل",
   "select_duration": "حدد المدة",
-  "select_date" : " حدد التاريخ ",
+  "select_date": " حدد التاريخ ",
   "sick_leave": "إجازة مرضية",
   "vacation_leave": "إجازة سنوية",
   "off_leave": "إجازة شخصية",
@@ -93,6 +93,6 @@
   "add_employee": "إضافة موظف",
   "end_time_after_start": "يجب أن يكون وقت النهاية بعد وقت البداية",
   "absence_recorded_success": "تم تسجيل الغياب بنجاح",
-  "error_generic": "حدث خطأ"
-
+  "error_generic": "حدث خطأ",
+  "projects": "المشاريع"
 }
