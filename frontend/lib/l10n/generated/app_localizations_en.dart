@@ -1,3 +1,5 @@
+// ignore: unused_import
+import 'package:intl/intl.dart' as intl;
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -240,7 +242,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get absence_distribution => 'Absence Type Distribution';
 
   @override
-  String get work_hours_note => 'Default work hours: 10:00 AM to 5:00 PM (7 hours per day)';
+  String get work_hours_note =>
+      'Default work hours: 10:00 AM to 5:00 PM (7 hours per day)';
 
   @override
   String get reason_required => 'Reason is required';
@@ -255,7 +258,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get select_employee => 'Select an Employee';
 
   @override
-  String get select_employee_message => 'Choose an employee from the list to view their leave and absence details';
+  String get select_employee_message =>
+      'Choose an employee from the list to view their leave and absence details';
 
   @override
   String get admin_actions => 'Admin Actions';
@@ -286,4 +290,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get error_generic => 'An error occurred';
+
+  @override
+  String get projects => 'Projects';
 }

@@ -63,7 +63,7 @@
   "duration_exceeds_workday": "Duration cannot exceed 7 hours",
   "record": "record",
   "select_duration": "select duration",
-  "select_date" : "select date",
+  "select_date": "select date",
   "sick_leave": "Sick Leave",
   "vacation_leave": "Vacation Leave",
   "off_leave": "Off Leave",
@@ -93,5 +93,6 @@
   "add_employee": "Add Employee",
   "end_time_after_start": "End time must be after start time",
   "absence_recorded_success": "Absence recorded successfully",
-  "error_generic": "An error occurred"
+  "error_generic": "An error occurred",
+  "projects": "Projects"
 }
