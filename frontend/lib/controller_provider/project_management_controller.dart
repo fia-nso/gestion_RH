@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:frontend/models/project_model.dart';
 import 'package:frontend/services/project_service.dart';
@@ -7,6 +9,9 @@ class ProjectManagementController extends ChangeNotifier {
   List<Project> projects = [];
   bool loading = false;
   String? error;
+  ProjectManagementController() {
+    loadProjects();
+  }
 
   Future<void> loadProjects() async {
     loading = true;
@@ -124,7 +129,8 @@ class ProjectManagementController extends ChangeNotifier {
     }
   }
 
-  bool _validateInputs(String name, String description, String size, String scope) {
+  bool _validateInputs(
+      String name, String description, String size, String scope) {
     return name.trim().isNotEmpty &&
         description.trim().isNotEmpty &&
         size.trim().isNotEmpty &&

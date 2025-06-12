@@ -39,11 +39,9 @@ class ProjectService {
         throw Exception('Only admins can create projects');
       }
 
-      final projectId = const Uuid().v4();
       final now = DateTime.now();
 
       final projectData = {
-        'id': projectId,
         'name': name.trim(),
         'description': description.trim(),
         'start_date': startDate.toIso8601String(),
@@ -67,23 +65,6 @@ class ProjectService {
         print(
             'Failed to create project: ${projectResponse.error} (Status: ${projectResponse.status})');
         return false;
-      }
-
-      if (employerAssignments != null && employerAssignments.isNotEmpty) {
-        for (var assignment in employerAssignments) {
-          final assignmentData = {
-            'id': const Uuid().v4(),
-            'project_id': projectId,
-            'employer_id': assignment['employer_id'],
-            'role': assignment['role'],
-            'assigned_at': now.toIso8601String(),
-          };
-          final assignmentResponse = await apiFetcher.post(
-              'project_employer_assignments', assignmentData);
-          if (!assignmentResponse.isSuccess) {
-            print('Failed to create assignment: ${assignmentResponse.error}');
-          }
-        }
       }
 
       return true;
@@ -153,8 +134,10 @@ class ProjectService {
                   'assigned_at': DateTime.now().toIso8601String(),
                 })
             .toList();
-        final assignmentResponse = await apiFetcher.post(
-            'projects/$projectId/assignments', {'assignments': assignmentData});
+        final assignmentResponse =
+            await apiFetcher.post('projects/$projectId/assignments', {
+          'assignments': assignmentData,
+        });
         if (!assignmentResponse.isSuccess) {
           print('Failed to update assignments: ${assignmentResponse.error}');
           success = false;
@@ -172,24 +155,10 @@ class ProjectService {
     try {
       print('Fetching all projects...');
 
-      final response = await client.from('projects').select('''
-      id,
-      project_name,
-      description,
-      start_date,
-      end_date,
-      size,
-      scope,
-      assigned_employers:assigned_employers (
-        user_id,
-        users (
-          id,
-          name
-        )
-      )
-    ''');
+      final response = await client.from('projects').select('*');
 
       print('Raw Supabase response: $response');
+
       if (response.isEmpty) {
         print('No projects found.');
         return [];

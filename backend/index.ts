@@ -1044,6 +1044,8 @@ app.group("/projects", (app) =>
       }
     })
 
+
+
     .post(
       "/",
       async ({ body, set, request }) => {
@@ -1055,8 +1057,21 @@ app.group("/projects", (app) =>
           return { success: false, error: "Only admins can create projects" };
         }
 
-        const { name, description, startDate, endDate, size, scope, status } =
-          body;
+        const {
+          id, // ID optionnel du frontend
+          name,
+          description,
+          startDate,
+          endDate,
+          size,
+          scope,
+          status,
+          employer_assignments // Champ pour les assignations d'employés avec rôles
+        } = body;
+
+        // Debug: Log des données reçues
+        console.log("Body received:", body);
+        console.log("Employer assignments:", employer_assignments);
 
         try {
           // Validation des données requises
@@ -1068,11 +1083,22 @@ app.group("/projects", (app) =>
             };
           }
 
+          // Validation des assignations d'employés (optionnel)
+          if (employer_assignments && !Array.isArray(employer_assignments)) {
+            set.status = 400;
+            return {
+              success: false,
+              error: "employer_assignments must be an array",
+            };
+          }
+
+          // Début de la transaction
           // Insertion du projet
           const { data: projectData, error: projectError } = await supabase
             .from("projects")
             .insert([
               {
+                ...(id && { id }), // Inclure l'ID seulement s'il est fourni
                 name,
                 description,
                 start_date: startDate,
@@ -1091,11 +1117,76 @@ app.group("/projects", (app) =>
             return { success: false, error: projectError.message };
           }
 
+          // Si des employés sont assignés, les ajouter à la table project_employees
+          if (employer_assignments && employer_assignments.length > 0) {
+            console.log("Creating project-employee assignments for project:", projectData.id);
+
+            const projectEmployeesData = employer_assignments.map((assignment: any) => ({
+              project_id: projectData.id,
+              employee_id: assignment.employer_id,
+              assigned_at: new Date().toISOString(),
+              role: assignment.role || "member"
+            }));
+
+            console.log("Project employees data to insert:", projectEmployeesData);
+
+            const { data: assignmentData, error: assignmentError } = await supabase
+              .from("project_employees")
+              .insert(projectEmployeesData)
+              .select();
+
+            if (assignmentError) {
+              console.error("Assignment error:", assignmentError);
+
+              set.status = 201;
+              return {
+                success: true,
+                data: projectData,
+                message: "Project created successfully but employee assignment failed",
+                warning: assignmentError.message,
+              };
+            }
+
+            console.log("Assignment successful:", assignmentData);
+          }
+
+          // Récupérer le projet avec les employés assignés pour la réponse
+          const { data: completeProjectData, error: fetchError } = await supabase
+            .from("projects")
+            .select(`
+              *,
+              project_employees (
+                employee_id,
+                assigned_at,
+                employee:users!project_employees_employee_id_fkey (
+                  id,
+                  email,
+                  name
+                )
+              )
+            `)
+            .eq("id", projectData.id)
+            .single();
+
+          if (fetchError) {
+            console.error("Fetch error:", fetchError);
+            // Retourner les données de base même si la récupération complète échoue
+            set.status = 201;
+            return {
+              success: true,
+              data: projectData,
+              message: "Project created successfully",
+            };
+          }
+
           set.status = 201;
           return {
             success: true,
-            data: projectData,
-            message: "Project created successfully",
+            data: completeProjectData,
+            message: "Project created successfully" +
+              (employer_assignments && employer_assignments.length > 0
+                ? ` with ${employer_assignments.length} employee(s) assigned`
+                : ""),
           };
         } catch (err) {
           console.error("Unexpected error:", err);
@@ -1109,6 +1200,7 @@ app.group("/projects", (app) =>
       },
       {
         body: t.Object({
+          id: t.Optional(t.String()), // ID optionnel
           name: t.String(),
           description: t.String(),
           startDate: t.Optional(t.String()),
@@ -1116,10 +1208,13 @@ app.group("/projects", (app) =>
           size: t.Optional(t.String()),
           scope: t.Optional(t.String()),
           status: t.Optional(t.String()),
+          employer_assignments: t.Optional(t.Array(t.Object({
+            employer_id: t.String(),
+            role: t.String()
+          }))), // Nouveau champ pour les assignations avec rôles
         }),
       }
     )
-
     // PUT /projects/:id - Update project
     .put(
       "/:id",

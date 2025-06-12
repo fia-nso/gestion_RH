@@ -42,7 +42,8 @@ class ProjectEmployees {
       employerId: map['employer_id'] as String,
       role: map['role'] as String?,
       assignedAt: DateTime.parse(map['assigned_at'] as String),
-      employer: map['employer'] != null ? Employer.fromMap(map['employer']) : null,
+      employer:
+          map['employer'] != null ? Employer.fromMap(map['employer']) : null,
     );
   }
 
@@ -68,7 +69,6 @@ class Project {
   final ProjectStatus status;
   final DateTime createdAt;
   final DateTime updatedAt;
-  final List<ProjectEmployees> assignments;
 
   Project({
     required this.id,
@@ -81,28 +81,22 @@ class Project {
     required this.status,
     required this.createdAt,
     required this.updatedAt,
-    this.assignments = const [],
   });
 
   factory Project.fromMap(Map<String, dynamic> map) {
-    final assignments = (map['assignments'] as List<dynamic>? ?? [])
-        .map((item) => ProjectEmployees.fromMap(item))
-        .toList();
-
     return Project(
-      id: map['id'] as String,
-      name: map['name'] as String,
-      description: map['description'] as String,
+      id: map['id'],
+      name: map['name'],
+      description: map['description'],
       startDate: DateTime.parse(map['start_date'] as String),
       endDate: map['end_date'] != null
           ? DateTime.parse(map['end_date'] as String)
           : null,
-      size: map['size'] as String,
-      scope: map['scope'] as String,
+      size: map['size'],
+      scope: map['scope'],
       status: ProjectStatus.fromString(map['status'] as String),
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
-      assignments: assignments,
     );
   }
 
@@ -130,7 +124,6 @@ class Project {
     String? scope,
     ProjectStatus? status,
     DateTime? updatedAt,
-    List<ProjectEmployees>? assignments,
   }) {
     return Project(
       id: id,
@@ -143,7 +136,6 @@ class Project {
       status: status ?? this.status,
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
-      assignments: assignments ?? this.assignments,
     );
   }
 }

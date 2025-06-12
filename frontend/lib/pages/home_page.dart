@@ -2266,22 +2266,8 @@ class EmployeeDetails extends StatelessWidget {
   }
 }
 
-
-
-class ProjectManagementView extends StatefulWidget {
+class ProjectManagementView extends StatelessWidget {
   const ProjectManagementView({super.key});
-
-  @override
-  _ProjectManagementViewState createState() => _ProjectManagementViewState();
-}
-
-class _ProjectManagementViewState extends State<ProjectManagementView> {
-  @override
-  void initState() {
-    super.initState();
-    // Fetch projects when the page is first loaded
-    context.read<ProjectManagementController>().loadProjects();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -2393,32 +2379,6 @@ class ProjectCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 12),
-              if (project.assignments.isNotEmpty) ...[
-                Text(
-                  appLocalizations.assigned_employers,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  children: project.assignments.map((assignment) {
-                    return Chip(
-                      label: Text(
-                        assignment.employer?.name ?? assignment.employerId,
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                      avatar: assignment.role != null
-                          ? CircleAvatar(
-                              child: Text(assignment.role![0]),
-                            )
-                          : null,
-                    );
-                  }).toList(),
-                ),
-              ],
-              const SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -2509,12 +2469,6 @@ class ProjectFormController extends ChangeNotifier {
       _startDate = project!.startDate;
       _endDate = project!.endDate;
       _status = project!.status;
-      _assignments = project!.assignments
-          .map((a) => {
-                'employer_id': a.employerId,
-                'role': a.role ?? '',
-              })
-          .toList();
     }
   }
 
