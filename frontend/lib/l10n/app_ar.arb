@@ -63,7 +63,7 @@
   "duration_exceeds_workday": "لا يمكن أن تتجاوز المدة 7 ساعات",
   "record": "تسجيل",
   "select_duration": "حدد المدة",
-  "select_date" : " حدد التاريخ ",
+  "select_date": "حدد التاريخ",
   "sick_leave": "إجازة مرضية",
   "vacation_leave": "إجازة سنوية",
   "off_leave": "إجازة شخصية",
@@ -93,6 +93,23 @@
   "add_employee": "إضافة موظف",
   "end_time_after_start": "يجب أن يكون وقت النهاية بعد وقت البداية",
   "absence_recorded_success": "تم تسجيل الغياب بنجاح",
-  "error_generic": "حدث خطأ"
+  "error_generic": "حدث خطأ",
+  "projects": "المشاريع",
+  "create_project": "إنشاء مشروع",
+  "edit_project": "تعديل مشروع",
+  "project_name": "اسم المشروع",
+  "size_and_scope": "الحجم والنطاق",
+  "assigned_employers": "أصحاب العمل المعينون",
+  "add_employer": "إضافة صاحب عمل",
+  "select_employer": "اختر صاحب عمل",
+  "description": " التفاصيل",
+  "add": "إضافة",
+  "absence_create_success": "تم تسجيل الغياب بنجاح",
+  "end_date_label": "تاريخ الانتهاء (اختياري)",
+  "not_set": "غير محدد",
+  "select_status": "اختر الحالة",
+  "project_size": "الحجم",
+  "project_scope": "النطاق"
+
 
 }

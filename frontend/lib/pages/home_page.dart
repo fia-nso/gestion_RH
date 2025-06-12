@@ -10,8 +10,10 @@ import '../controller_provider/auth_provider.dart';
 import '../controller_provider/employee_management_controller.dart';
 import '../controller_provider/leave_management_controller.dart';
 import '../controller_provider/locale_provider.dart';
+import '../controller_provider/project_management_controller.dart';
 import '../models/absence_model.dart';
 import '../models/leave_model.dart';
+import '../models/project_model.dart';
 import '../services/leave_service.dart';
 import '../widgets/leave_display_widgets.dart';
 import 'package:image_picker/image_picker.dart';
@@ -57,13 +59,20 @@ class _HomePageBodyState extends State<_HomePageBody> {
 
     // Ajouter la page "Employees" en premier si l'utilisateur est admin
     if (userRole == 'admin') {
-      pages.add(const EmployeeManagementView()); // Page Employees pour admin
+      pages.add(const EmployeeManagementView()); // Employees page second
       navButtons.add(
         GButton(
           icon: Icons.people,
           text: AppLocalizations.of(context)!.employees,
-          semanticLabel:
-              AppLocalizations.of(context)!.employees, // Accessibilité
+          semanticLabel: AppLocalizations.of(context)!.employees,
+        ),
+      );
+      pages.add(const ProjectManagementView()); // Add Projects page first
+      navButtons.add(
+        GButton(
+          icon: Icons.folder,
+          text: AppLocalizations.of(context)!.projects,
+          semanticLabel: AppLocalizations.of(context)!.projects,
         ),
       );
     }
@@ -2254,5 +2263,609 @@ class EmployeeDetails extends StatelessWidget {
         },
       ),
     );
+  }
+}
+
+
+
+class ProjectManagementView extends StatefulWidget {
+  const ProjectManagementView({super.key});
+
+  @override
+  _ProjectManagementViewState createState() => _ProjectManagementViewState();
+}
+
+class _ProjectManagementViewState extends State<ProjectManagementView> {
+  @override
+  void initState() {
+    super.initState();
+    // Fetch projects when the page is first loaded
+    context.read<ProjectManagementController>().loadProjects();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (_) => ProjectManagementController(),
+      child: Scaffold(
+        body: Consumer<ProjectManagementController>(
+          builder: (context, controller, child) {
+            if (controller.loading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (controller.error != null) {
+              return Center(child: Text(controller.error!));
+            }
+            return ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: controller.projects.length,
+              itemBuilder: (context, index) {
+                final project = controller.projects[index];
+                return ProjectCard(
+                  project: project,
+                  onEdit: () => _showProjectDialog(context, project: project),
+                );
+              },
+            );
+          },
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () => _showProjectDialog(context),
+          child: const Icon(Icons.add),
+          tooltip: AppLocalizations.of(context)!.create_project,
+        ),
+      ),
+    );
+  }
+
+  void _showProjectDialog(BuildContext context, {Project? project}) {
+    showDialog(
+      context: context,
+      builder: (context) => MultiProvider(
+        providers: [
+          ChangeNotifierProvider.value(
+              value: context.read<EmployeeManagementController>()
+                ..loadEmployees()),
+          ChangeNotifierProvider(create: (_) => ProjectFormController(project)),
+        ],
+        child: const ProjectFormDialog(),
+      ),
+    );
+  }
+}
+
+class ProjectCard extends StatelessWidget {
+  final Project project;
+  final VoidCallback onEdit;
+
+  const ProjectCard({super.key, required this.project, required this.onEdit});
+
+  @override
+  Widget build(BuildContext context) {
+    final appLocalizations = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: InkWell(
+        onTap: () => context.read<ProjectManagementController>().loadProjects(),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      project.name,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  _buildStatusChip(project.status, context),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                project.description,
+                style: theme.textTheme.bodyMedium,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  _buildInfoItem(
+                    icon: Icons.calendar_today,
+                    label:
+                        '${DateFormat.yMMMd().format(project.startDate)} - ${project.endDate != null ? DateFormat.yMMMd().format(project.endDate!) : 'Ongoing'}',
+                    context: context,
+                  ),
+                  const Spacer(),
+                  _buildInfoItem(
+                    icon: Icons.info_outline,
+                    label: '${project.size} / ${project.scope}',
+                    context: context,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              if (project.assignments.isNotEmpty) ...[
+                Text(
+                  appLocalizations.assigned_employers,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  children: project.assignments.map((assignment) {
+                    return Chip(
+                      label: Text(
+                        assignment.employer?.name ?? assignment.employerId,
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      avatar: assignment.role != null
+                          ? CircleAvatar(
+                              child: Text(assignment.role![0]),
+                            )
+                          : null,
+                    );
+                  }).toList(),
+                ),
+              ],
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton.icon(
+                    onPressed: onEdit,
+                    icon: const Icon(Icons.edit, size: 18),
+                    label: Text(appLocalizations.edit),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusChip(ProjectStatus status, BuildContext context) {
+    Color color;
+    switch (status) {
+      case ProjectStatus.planning:
+        color = Colors.blue;
+        break;
+      case ProjectStatus.active:
+        color = Colors.green;
+        break;
+      case ProjectStatus.onHold:
+        color = Colors.orange;
+        break;
+      case ProjectStatus.completed:
+        color = Colors.grey;
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color),
+      ),
+      child: Text(
+        status.value,
+        style: TextStyle(
+          color: color,
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoItem({
+    required IconData icon,
+    required String label,
+    required BuildContext context,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: Theme.of(context).colorScheme.primary),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+      ],
+    );
+  }
+}
+
+class ProjectFormController extends ChangeNotifier {
+  final Project? project;
+  final _nameController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _sizeController = TextEditingController();
+  final _scopeController = TextEditingController();
+  DateTime _startDate = DateTime.now();
+  DateTime? _endDate;
+  ProjectStatus _status = ProjectStatus.planning;
+  List<Map<String, String>> _assignments = [];
+
+  ProjectFormController(this.project) {
+    if (project != null) {
+      _nameController.text = project!.name;
+      _descriptionController.text = project!.description;
+      _sizeController.text = project!.size;
+      _scopeController.text = project!.scope;
+      _startDate = project!.startDate;
+      _endDate = project!.endDate;
+      _status = project!.status;
+      _assignments = project!.assignments
+          .map((a) => {
+                'employer_id': a.employerId,
+                'role': a.role ?? '',
+              })
+          .toList();
+    }
+  }
+
+  TextEditingController get nameController => _nameController;
+  TextEditingController get descriptionController => _descriptionController;
+  TextEditingController get sizeController => _sizeController;
+  TextEditingController get scopeController => _scopeController;
+  DateTime get startDate => _startDate;
+  DateTime? get endDate => _endDate;
+  ProjectStatus get status => _status;
+  List<Map<String, String>> get assignments => _assignments;
+
+  void setStartDate(DateTime date) {
+    _startDate = date;
+    notifyListeners();
+  }
+
+  void setEndDate(DateTime? date) {
+    _endDate = date;
+    notifyListeners();
+  }
+
+  void setStatus(ProjectStatus status) {
+    _status = status;
+    notifyListeners();
+  }
+
+  void addAssignment(String employerId, String role) {
+    _assignments.add({'employer_id': employerId, 'role': role});
+    notifyListeners();
+  }
+
+  void removeAssignment(String employerId) {
+    _assignments.removeWhere((a) => a['employer_id'] == employerId);
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descriptionController.dispose();
+    _sizeController.dispose();
+    _scopeController.dispose();
+    super.dispose();
+  }
+}
+
+class ProjectFormDialog extends StatelessWidget {
+  const ProjectFormDialog({super.key});
+
+  static final _formKey = GlobalKey<FormState>();
+
+  @override
+  Widget build(BuildContext context) {
+    final appLocalizations = AppLocalizations.of(context)!;
+    final formController = context.watch<ProjectFormController>();
+    final employeeController = context.watch<EmployeeManagementController>();
+
+    return AlertDialog(
+      title: Text(formController.project == null
+          ? appLocalizations.create_project
+          : appLocalizations.edit_project),
+      content: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: formController.nameController,
+                decoration: InputDecoration(
+                  labelText: appLocalizations.project_name,
+                  border: const OutlineInputBorder(),
+                ),
+                validator: (value) => value!.trim().isEmpty
+                    ? appLocalizations.name_required
+                    : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: formController.descriptionController,
+                decoration: InputDecoration(
+                  labelText: appLocalizations.description,
+                  border: const OutlineInputBorder(),
+                ),
+                maxLines: 3,
+                validator: (value) =>
+                    value!.trim().isEmpty ? appLocalizations.description : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: formController.sizeController,
+                decoration: InputDecoration(
+                  labelText: appLocalizations.project_size,
+                  border: const OutlineInputBorder(),
+                ),
+                validator: (value) => value!.trim().isEmpty
+                    ? appLocalizations.project_size
+                    : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: formController.scopeController,
+                decoration: InputDecoration(
+                  labelText: appLocalizations.project_scope,
+                  border: const OutlineInputBorder(),
+                ),
+                validator: (value) => value!.trim().isEmpty
+                    ? appLocalizations.project_scope
+                    : null,
+              ),
+              const SizedBox(height: 16),
+              InkWell(
+                onTap: () => _selectDate(context, formController, true),
+                child: InputDecorator(
+                  decoration: InputDecoration(
+                    labelText: appLocalizations.start_date,
+                    border: const OutlineInputBorder(),
+                    suffixIcon: const Icon(Icons.calendar_today),
+                  ),
+                  child: Text(
+                    DateFormat.yMMMd().format(formController.startDate),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              InkWell(
+                onTap: () => _selectDate(context, formController, false),
+                child: InputDecorator(
+                  decoration: InputDecoration(
+                    labelText: appLocalizations.end_date_label,
+                    border: const OutlineInputBorder(),
+                    suffixIcon: const Icon(Icons.calendar_today),
+                  ),
+                  child: Text(formController.endDate == null
+                      ? appLocalizations.not_set
+                      : DateFormat.yMMMd().format(formController.endDate!)),
+                ),
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<ProjectStatus>(
+                value: formController.status,
+                decoration: InputDecoration(
+                  labelText: appLocalizations.status,
+                  border: const OutlineInputBorder(),
+                ),
+                items: ProjectStatus.values
+                    .map((status) => DropdownMenuItem(
+                          value: status,
+                          child: Text(status.value),
+                        ))
+                    .toList(),
+                onChanged: (value) => formController.setStatus(value!),
+              ),
+              const SizedBox(height: 16),
+              _buildEmployerAssignmentSection(
+                context,
+                formController,
+                employeeController,
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(appLocalizations.cancel),
+        ),
+        ElevatedButton(
+          onPressed: () => _saveProject(context, formController, _formKey),
+          child: Text(formController.project == null
+              ? appLocalizations.create
+              : appLocalizations.update),
+        ),
+      ],
+    );
+  }
+}
+
+Widget _buildEmployerAssignmentSection(
+    BuildContext context,
+    ProjectFormController formController,
+    EmployeeManagementController employeeController) {
+  final appLocalizations = AppLocalizations.of(context)!;
+
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        appLocalizations.assigned_employers,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+      ),
+      const SizedBox(height: 8),
+      if (formController.assignments.isNotEmpty)
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: formController.assignments.map((assignment) {
+            final employer = employeeController.employees.firstWhere(
+              (e) => e.id == assignment['employer_id'],
+              orElse: () => Employer(
+                id: assignment['employer_id']!,
+                roles: [AppRole(id: 'employer')],
+              ),
+            );
+            return Chip(
+              label: Text(employer.name ?? employer.id),
+              deleteIcon: const Icon(Icons.close, size: 18),
+              onDeleted: () =>
+                  formController.removeAssignment(assignment['employer_id']!),
+            );
+          }).toList(),
+        ),
+      const SizedBox(height: 8),
+      ElevatedButton.icon(
+        onPressed: () => _showEmployerSelectionDialog(
+            context, formController, employeeController),
+        icon: const Icon(Icons.person_add),
+        label: Text(appLocalizations.add_employer),
+      ),
+    ],
+  );
+}
+
+Future<void> _selectDate(BuildContext context, ProjectFormController controller,
+    bool isStartDate) async {
+  final initialDate =
+      isStartDate ? controller.startDate : controller.endDate ?? DateTime.now();
+  final date = await showDatePicker(
+    context: context,
+    initialDate: initialDate,
+    firstDate: DateTime.now().subtract(const Duration(days: 365)),
+    lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
+  );
+  if (date != null) {
+    if (isStartDate) {
+      controller.setStartDate(date);
+    } else {
+      controller.setEndDate(date);
+    }
+  }
+}
+
+void _showEmployerSelectionDialog(
+    BuildContext context,
+    ProjectFormController formController,
+    EmployeeManagementController employeeController) {
+  showDialog(
+    context: context,
+    builder: (context) {
+      final roleController = TextEditingController();
+      Employer? selectedEmployer;
+
+      return AlertDialog(
+        title: Text(AppLocalizations.of(context)!.select_employer),
+        content: StatefulBuilder(
+          builder: (context, setState) {
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButtonFormField<Employer>(
+                  decoration: const InputDecoration(
+                    labelText: 'Employer',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: employeeController.employees
+                      .where((e) => !formController.assignments
+                          .any((a) => a['employer_id'] == e.id))
+                      .map((employer) => DropdownMenuItem(
+                            value: employer,
+                            child: Text(employer.name ?? employer.id),
+                          ))
+                      .toList(),
+                  onChanged: (value) =>
+                      setState(() => selectedEmployer = value),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: roleController,
+                  decoration: const InputDecoration(
+                    labelText: 'Role (Optional)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(AppLocalizations.of(context)!.cancel),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (selectedEmployer != null) {
+                formController.addAssignment(
+                    selectedEmployer!.id, roleController.text.trim());
+                Navigator.of(context).pop();
+              }
+            },
+            child: Text(AppLocalizations.of(context)!.add),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+Future<void> _saveProject(BuildContext context,
+    ProjectFormController formController, GlobalKey<FormState> formKey) async {
+  if (formKey.currentState!.validate()) {
+    final controller = context.read<ProjectManagementController>();
+    bool success;
+    if (formController.project == null) {
+      success = await controller.createProject(
+        name: formController.nameController.text,
+        description: formController.descriptionController.text,
+        startDate: formController.startDate,
+        endDate: formController.endDate,
+        size: formController.sizeController.text,
+        scope: formController.scopeController.text,
+        status: formController.status,
+        employerAssignments: formController.assignments,
+      );
+    } else {
+      success = await controller.updateProject(
+        projectId: formController.project!.id,
+        name: formController.nameController.text,
+        description: formController.descriptionController.text,
+        startDate: formController.startDate,
+        endDate: formController.endDate,
+        size: formController.sizeController.text,
+        scope: formController.scopeController.text,
+        status: formController.status,
+        employerAssignments: formController.assignments,
+      );
+    }
+    if (success && context.mounted) {
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(formController.project == null
+              ? 'project_create_success'
+              : 'project_update_success'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
   }
 }
