@@ -418,18 +418,23 @@ app.group("/employers", (app) =>
         const statusFilter = query.contact;
 
         // Step 1: Query employer table with optional status + search filters
-        let employerQuery = supabase
-          .from("employer")
-          .select("*")
-          .range(offset, offset + limit - 1);
+        let employerQuery = supabase.from("employer").select(`
+    id,
+    contact,
+    details,
+    photo,
+    start_date,
+    users ( id, email, name ,status)
+  `);
+        // .range(offset, offset + limit - 1);
 
         if (statusFilter) {
-          employerQuery = employerQuery.eq("contact", statusFilter);
+          employerQuery = employerQuery.eq("status", statusFilter);
         }
 
         if (search) {
           employerQuery = employerQuery.or(
-            `contact.ilike.%${search}%,details.ilike.%${search}%`
+            `status.ilike.%${search}%,details.ilike.%${search}%`
           );
           // Adjust the fields if needed to include searchable ones like name or email (see below)
         }
@@ -465,12 +470,15 @@ app.group("/employers", (app) =>
         // Step 4: Merge data
         const enriched = employerUsers.map((authUser) => {
           const employerData = employerRows.find((e) => e.id === authUser.id);
+          console.log(employerUsers);
+          console.log("********************************");
+          // console.log(enriched);
           return {
             id: authUser.id,
             email: authUser.email,
             name: authUser.user_metadata?.name,
             created_at: authUser.created_at,
-            status: employerData?.status,
+            status: authUser.user_metadata?.status,
             ...employerData,
           };
         });
@@ -750,12 +758,16 @@ app.group("/employers", (app) =>
           if (
             isAdmin &&
             (name !== undefined ||
-              photoUrl !== currentUser.user.user_metadata?.photo)
+              photoUrl !== currentUser.user.user_metadata?.photo ||
+              status !== undefined ||
+              start_date !== undefined)
           ) {
             const updatedMetadata = {
               ...currentUser.user.user_metadata,
               ...(name !== undefined && { name: name.trim() }),
               ...(photoUrl && { photo: photoUrl }),
+              ...(status !== undefined && { status }),
+              ...(start_date !== undefined && { start_date }),
             };
 
             const { error: metadataUpdateError } =
@@ -930,20 +942,358 @@ app.group("/employers", (app) =>
     })
 );
 
+app.group("/projects", (app) =>
+  app
+    // Middleware to check authentication and roles
+    .onBeforeHandle(async ({ headers, set, request }) => {
+      const token = headers.authorization?.replace("Bearer ", "");
+      if (!token) {
+        set.status = 401;
+        return { success: false, error: "Unauthorized: No token provided" };
+      }
+
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser(token);
+
+      if (error || !user) {
+        set.status = 401;
+        return { success: false, error: "Invalid token" };
+      }
+
+      // Attach the user to the request object
+      (request as any).user = user as SupabaseUser;
+    })
+
+    // GET /projects - Get all projects
+    .get("/", async ({ set }) => {
+      try {
+        const { data, error } = await supabase
+          .from("projects")
+          .select(
+            `
+            *
+          `
+          )
+          .order("created_at", { ascending: false });
+
+        if (error) {
+          set.status = 400;
+          return { success: false, error: error.message };
+        }
+
+        return { success: true, data };
+      } catch (err) {
+        console.error("Unexpected error:", err);
+        set.status = 500;
+        return {
+          success: false,
+          error: "Internal server error",
+          details: err,
+        };
+      }
+    })
+
+    // GET /projects/:id - Get specific project
+    .get("/:id", async ({ params, set }) => {
+      try {
+        const { data, error } = await supabase
+          .from("projects")
+          .select(
+            `
+            *,
+            employer:employer_id(id, contact, details, photo, start_date),
+            creator:created_by(id, name, email, status),
+            assignee:assigned_to(id, name, email, status),
+            project_employees(
+              id,
+              role,
+              assigned_at,
+              employee:employee_id(id, contact, details, photo, start_date)
+            ),
+            project_absences(
+              id,
+              impact_level,
+              absence:absence_id(id, employee_id, absence_type, date, duration_minutes, reason, status)
+            )
+          `
+          )
+          .eq("id", params.id)
+          .single();
+
+        if (error) {
+          set.status = 400;
+          return { success: false, error: error.message };
+        }
+
+        if (!data) {
+          set.status = 404;
+          return { success: false, error: "Project not found" };
+        }
+
+        return { success: true, data };
+      } catch (err) {
+        console.error("Unexpected error:", err);
+        set.status = 500;
+        return {
+          success: false,
+          error: "Internal server error",
+          details: err,
+        };
+      }
+    })
+
+    .post(
+      "/",
+      async ({ body, set, request }) => {
+        const user = (request as any).user as SupabaseUser;
+
+        // Check if user is admin
+        if (!user.user_metadata?.roles?.includes("admin")) {
+          set.status = 403;
+          return { success: false, error: "Only admins can create projects" };
+        }
+
+        const { name, description, startDate, endDate, size, scope, status } =
+          body;
+
+        try {
+          // Validation des données requises
+          if (!name || !description) {
+            set.status = 400;
+            return {
+              success: false,
+              error: "Name and description are required",
+            };
+          }
+
+          // Insertion du projet
+          const { data: projectData, error: projectError } = await supabase
+            .from("projects")
+            .insert([
+              {
+                name,
+                description,
+                start_date: startDate,
+                end_date: endDate,
+                size,
+                scope,
+                status: status || "planning",
+                created_by: user.id,
+              },
+            ])
+            .select()
+            .single();
+
+          if (projectError) {
+            set.status = 400;
+            return { success: false, error: projectError.message };
+          }
+
+          set.status = 201;
+          return {
+            success: true,
+            data: projectData,
+            message: "Project created successfully",
+          };
+        } catch (err) {
+          console.error("Unexpected error:", err);
+          set.status = 500;
+          return {
+            success: false,
+            error: "Internal server error",
+            details: err,
+          };
+        }
+      },
+      {
+        body: t.Object({
+          name: t.String(),
+          description: t.String(),
+          startDate: t.Optional(t.String()),
+          endDate: t.Optional(t.String()),
+          size: t.Optional(t.String()),
+          scope: t.Optional(t.String()),
+          status: t.Optional(t.String()),
+        }),
+      }
+    )
+
+    // PUT /projects/:id - Update project
+    .put(
+      "/:id",
+      async ({ body, params, set, request }) => {
+        const user = (request as any).user as SupabaseUser;
+
+        // Check if user is admin
+        if (!user.user_metadata?.roles?.includes("admin")) {
+          set.status = 403;
+          return { success: false, error: "Only admins can update projects" };
+        }
+
+        const {
+          name,
+          description,
+          startDate,
+          endDate,
+          size,
+          scope,
+          status,
+          employerId,
+          assignedTo,
+          employeeIds = [],
+        } = body;
+
+        try {
+          // Vérifier que le projet existe
+          const { data: existingProject, error: checkError } = await supabase
+            .from("projects")
+            .select("id, name")
+            .eq("id", params.id)
+            .single();
+
+          if (checkError || !existingProject) {
+            set.status = 404;
+            return { success: false, error: "Project not found" };
+          }
+
+          // Mise à jour du projet
+          const { data, error } = await supabase
+            .from("projects")
+            .update({
+              name,
+              description,
+              start_date: startDate,
+              end_date: endDate,
+              size,
+              scope,
+              status,
+              employer_id: employerId,
+              assigned_to: assignedTo,
+            })
+            .eq("id", params.id)
+            .select()
+            .single();
+
+          if (error) {
+            set.status = 400;
+            return { success: false, error: error.message };
+          }
+
+          // Mise à jour des assignations d'employés
+          if (employeeIds.length >= 0) {
+            // Supprimer les anciennes assignations
+            await supabase
+              .from("project_employees")
+              .delete()
+              .eq("project_id", params.id);
+
+            // Ajouter les nouvelles assignations
+            if (employeeIds.length > 0) {
+              const employeeAssignments = employeeIds.map(
+                (employeeId: any) => ({
+                  project_id: params.id,
+                  employee_id: employeeId,
+                })
+              );
+
+              await supabase
+                .from("project_employees")
+                .insert(employeeAssignments);
+            }
+          }
+
+          return {
+            success: true,
+            data,
+            message: "Project updated successfully",
+          };
+        } catch (err) {
+          console.error("Unexpected error:", err);
+          set.status = 500;
+          return {
+            success: false,
+            error: "Internal server error",
+            details: err,
+          };
+        }
+      },
+      {
+        body: t.Object({
+          name: t.Optional(t.String()),
+          description: t.Optional(t.String()),
+          startDate: t.Optional(t.String()),
+          endDate: t.Optional(t.String()),
+          size: t.Optional(t.String()),
+          scope: t.Optional(t.String()),
+          status: t.Optional(t.String()),
+          employerId: t.Optional(t.String()),
+          assignedTo: t.Optional(t.String()),
+          employeeIds: t.Optional(t.Array(t.String())),
+        }),
+      }
+    )
+
+    // DELETE /projects/:id - Delete project
+    .delete("/:id", async ({ params, set, request }) => {
+      const user = (request as any).user as SupabaseUser;
+
+      // Check if user is admin
+      if (!user.user_metadata?.roles?.includes("admin")) {
+        set.status = 403;
+        return { success: false, error: "Only admins can delete projects" };
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from("projects")
+          .delete()
+          .eq("id", params.id)
+          .select()
+          .single();
+
+        if (error) {
+          set.status = 400;
+          return { success: false, error: error.message };
+        }
+
+        if (!data) {
+          set.status = 404;
+          return { success: false, error: "Project not found" };
+        }
+
+        return {
+          success: true,
+          message: "Project deleted successfully",
+          data,
+        };
+      } catch (err) {
+        console.error("Unexpected error:", err);
+        set.status = 500;
+        return {
+          success: false,
+          error: "Internal server error",
+          details: err,
+        };
+      }
+    })
+);
+
 app.listen(3000, () => {
   console.log("✅ Server running on http://localhost:3000");
 });
 
-// type EmployerWithUser = {
-//   id: string;
-//   contact: string;
-//   details: string | null;
-//   photo: string;
-//   start_date: string;
-//   users: {
-//     id: string;
-//     email: string;
-//     name: string;
-//     status: string;
-//   };
-// };
+type EmployerWithUser = {
+  id: string;
+  contact: string;
+  details: string | null;
+  photo: string;
+  start_date: string;
+  users: {
+    id: string;
+    email: string;
+    name: string;
+    status: string;
+  };
+};
