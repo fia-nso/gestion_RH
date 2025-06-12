@@ -2266,6 +2266,209 @@ class EmployeeDetails extends StatelessWidget {
   }
 }
 
+class EditProjectDialog extends StatefulWidget {
+  final Project project;
+  final ProjectManagementController controller;
+
+  const EditProjectDialog({
+    super.key,
+    required this.project,
+    required this.controller,
+  });
+
+  @override
+  State<EditProjectDialog> createState() => _EditProjectDialogState();
+}
+
+class _EditProjectDialogState extends State<EditProjectDialog> {
+  final _formKey = GlobalKey<FormState>();
+  late TextEditingController _nameController;
+  late TextEditingController _descriptionController;
+  late TextEditingController _sizeController;
+  late TextEditingController _scopeController;
+  DateTime? _startDate;
+  DateTime? _endDate;
+  ProjectStatus? _status;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.project.name);
+    _descriptionController =
+        TextEditingController(text: widget.project.description);
+    _sizeController = TextEditingController(text: widget.project.size);
+    _scopeController = TextEditingController(text: widget.project.scope);
+    _startDate = widget.project.startDate;
+    _endDate = widget.project.endDate;
+    _status = widget.project.status;
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descriptionController.dispose();
+    _sizeController.dispose();
+    _scopeController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _selectStartDate(BuildContext context) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _startDate ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+      helpText: 'Sélectionner la date de début',
+    );
+    if (picked != null && picked != _startDate) {
+      setState(() => _startDate = picked);
+    }
+  }
+
+  Future<void> _selectEndDate(BuildContext context) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _endDate ?? DateTime.now(),
+      firstDate: _startDate ?? DateTime(2000),
+      lastDate: DateTime(2100),
+      helpText: 'Sélectionner la date de fin',
+    );
+    if (picked != null && picked != _endDate) {
+      setState(() => _endDate = picked);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('Modifier le projet'),
+      content: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: _nameController,
+                decoration: InputDecoration(labelText: 'Nom du projet'),
+                validator: (value) => value == null || value.trim().isEmpty
+                    ? 'Le nom du projet est requis'
+                    : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _descriptionController,
+                decoration: InputDecoration(labelText: 'Description'),
+                maxLines: 3,
+                validator: (value) => value == null || value.trim().isEmpty
+                    ? 'La description est requise'
+                    : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _sizeController,
+                decoration: InputDecoration(labelText: 'Taille'),
+                validator: (value) => value == null || value.trim().isEmpty
+                    ? 'La taille est requise'
+                    : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _scopeController,
+                decoration: InputDecoration(labelText: 'Portée'),
+                validator: (value) => value == null || value.trim().isEmpty
+                    ? 'La portée est requise'
+                    : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                readOnly: true,
+                decoration: InputDecoration(
+                  labelText: 'Date de début',
+                  hintText: _startDate == null
+                      ? 'Sélectionner la date'
+                      : DateFormat.yMMMd().format(_startDate!),
+                ),
+                onTap: () => _selectStartDate(context),
+                validator: (value) =>
+                    _startDate == null ? 'La date de début est requise' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                readOnly: true,
+                decoration: InputDecoration(
+                  labelText: 'Date de fin (optionnelle)',
+                  hintText: _endDate == null
+                      ? 'Sélectionner la date'
+                      : DateFormat.yMMMd().format(_endDate!),
+                ),
+                onTap: () => _selectEndDate(context),
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<ProjectStatus>(
+                value: _status,
+                decoration: InputDecoration(labelText: 'Statut'),
+                items: ProjectStatus.values
+                    .map((status) => DropdownMenuItem(
+                        value: status, child: Text(status.value)))
+                    .toList(),
+                onChanged: (value) => setState(() => _status = value),
+                validator: (value) =>
+                    value == null ? 'Le statut est requis' : null,
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text('Annuler'),
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            if (_formKey.currentState!.validate()) {
+              final success = await widget.controller.updateProject(
+                projectId: widget.project.id,
+                name: _nameController.text,
+                description: _descriptionController.text,
+                startDate: _startDate,
+                endDate: _endDate,
+                size: _sizeController.text,
+                scope: _scopeController.text,
+                status: _status,
+              );
+
+              if (context.mounted) {
+                if (success) {
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Projet mis à jour avec succès'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(widget.controller.error ??
+                          'Erreur lors de la mise à jour'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            }
+          },
+          child: Text('Mettre à jour'),
+        ),
+      ],
+    );
+  }
+}
+
+// 2. Mise à jour du ProjectManagementView (remplacez votre code existant)
+
 class ProjectManagementView extends StatelessWidget {
   const ProjectManagementView({super.key});
 
@@ -2289,7 +2492,8 @@ class ProjectManagementView extends StatelessWidget {
                 final project = controller.projects[index];
                 return ProjectCard(
                   project: project,
-                  onEdit: () => _showProjectDialog(context, project: project),
+                  onEdit: () =>
+                      _showEditProjectDialog(context, project, controller),
                 );
               },
             );
@@ -2298,13 +2502,24 @@ class ProjectManagementView extends StatelessWidget {
         floatingActionButton: FloatingActionButton(
           onPressed: () => _showProjectDialog(context),
           child: const Icon(Icons.add),
-          tooltip: AppLocalizations.of(context)!.create_project,
+          tooltip: 'Créer un projet',
         ),
       ),
     );
   }
 
-  void _showProjectDialog(BuildContext context, {Project? project}) {
+  void _showEditProjectDialog(BuildContext context, Project project,
+      ProjectManagementController controller) {
+    showDialog(
+      context: context,
+      builder: (context) => EditProjectDialog(
+        project: project,
+        controller: controller,
+      ),
+    );
+  }
+
+  void _showProjectDialog(BuildContext context, [Project? project]) {
     showDialog(
       context: context,
       builder: (context) => MultiProvider(
@@ -2320,6 +2535,8 @@ class ProjectManagementView extends StatelessWidget {
   }
 }
 
+// 3. Mise à jour du ProjectCard (remplacez votre code existant)
+
 class ProjectCard extends StatelessWidget {
   final Project project;
   final VoidCallback onEdit;
@@ -2328,13 +2545,14 @@ class ProjectCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final appLocalizations = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       child: InkWell(
-        onTap: () => context.read<ProjectManagementController>().loadProjects(),
+        onTap: () {
+          // Vous pouvez ajouter une navigation vers les détails du projet ici
+        },
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -2367,7 +2585,7 @@ class ProjectCard extends StatelessWidget {
                   _buildInfoItem(
                     icon: Icons.calendar_today,
                     label:
-                        '${DateFormat.yMMMd().format(project.startDate)} - ${project.endDate != null ? DateFormat.yMMMd().format(project.endDate!) : 'Ongoing'}',
+                        '${DateFormat.yMMMd().format(project.startDate)} - ${project.endDate != null ? DateFormat.yMMMd().format(project.endDate!) : 'En cours'}',
                     context: context,
                   ),
                   const Spacer(),
@@ -2385,7 +2603,7 @@ class ProjectCard extends StatelessWidget {
                   TextButton.icon(
                     onPressed: onEdit,
                     icon: const Icon(Icons.edit, size: 18),
-                    label: Text(appLocalizations.edit),
+                    label: Text('Modifier'),
                   ),
                 ],
               ),
@@ -2397,37 +2615,31 @@ class ProjectCard extends StatelessWidget {
   }
 
   Widget _buildStatusChip(ProjectStatus status, BuildContext context) {
-    Color color;
+    Color chipColor;
     switch (status) {
       case ProjectStatus.planning:
-        color = Colors.blue;
+        chipColor = Colors.orange;
         break;
       case ProjectStatus.active:
-        color = Colors.green;
-        break;
-      case ProjectStatus.onHold:
-        color = Colors.orange;
+        chipColor = Colors.blue;
         break;
       case ProjectStatus.completed:
-        color = Colors.grey;
+        chipColor = Colors.green;
+        break;
+      case ProjectStatus.onHold:
+        chipColor = Colors.grey;
+        break;
+      case ProjectStatus.values:
+        chipColor = Colors.red;
         break;
     }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color),
-      ),
-      child: Text(
+    return Chip(
+      label: Text(
         status.value,
-        style: TextStyle(
-          color: color,
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-        ),
+        style: TextStyle(color: Colors.white, fontSize: 12),
       ),
+      backgroundColor: chipColor,
     );
   }
 
@@ -2437,8 +2649,9 @@ class ProjectCard extends StatelessWidget {
     required BuildContext context,
   }) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 16, color: Theme.of(context).colorScheme.primary),
+        Icon(icon, size: 16, color: Colors.grey[600]),
         const SizedBox(width: 4),
         Text(
           label,

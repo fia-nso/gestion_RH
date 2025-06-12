@@ -39,18 +39,14 @@ class ProjectService {
         throw Exception('Only admins can create projects');
       }
 
-      final now = DateTime.now();
-
       final projectData = {
         'name': name.trim(),
         'description': description.trim(),
-        'start_date': startDate.toIso8601String(),
-        'end_date': endDate?.toIso8601String(),
+        'startDate': startDate.toIso8601String(),
+        'endDate': endDate?.toIso8601String(),
         'size': size.trim(),
         'scope': scope.trim(),
         'status': status.value,
-        'created_at': now.toIso8601String(),
-        'updated_at': now.toIso8601String(),
         'employer_assignments': employerAssignments
             ?.map((a) => {
                   'employer_id': a['employer_id'],
@@ -107,44 +103,20 @@ class ProjectService {
       if (startDate != null) {
         updates['start_date'] = startDate.toIso8601String();
       }
-      if (endDate != null) updates['end_date'] = endDate?.toIso8601String();
+      if (endDate != null) {
+        updates['end_date'] = endDate.toIso8601String();
+      }
       if (size != null) updates['size'] = size.trim();
       if (scope != null) updates['scope'] = scope.trim();
       if (status != null) updates['status'] = status.value;
       updates['updated_at'] = DateTime.now().toIso8601String();
 
-      bool success = true;
+      // Utiliser directement Supabase au lieu de l'API pour la mise à jour
+      final response =
+          await client.from('projects').update(updates).eq('id', projectId);
 
-      if (updates.isNotEmpty) {
-        final response = await apiFetcher.post('projects/$projectId', updates);
-        if (!response.isSuccess) {
-          print(
-              'Failed to update project: ${response.error} (Status: ${response.status})');
-          success = false;
-        }
-      }
-
-      if (employerAssignments != null) {
-        final assignmentData = employerAssignments
-            .map((assignment) => {
-                  'id': const Uuid().v4(),
-                  'project_id': projectId,
-                  'employer_id': assignment['employer_id'],
-                  'role': assignment['role'],
-                  'assigned_at': DateTime.now().toIso8601String(),
-                })
-            .toList();
-        final assignmentResponse =
-            await apiFetcher.post('projects/$projectId/assignments', {
-          'assignments': assignmentData,
-        });
-        if (!assignmentResponse.isSuccess) {
-          print('Failed to update assignments: ${assignmentResponse.error}');
-          success = false;
-        }
-      }
-
-      return success;
+      print('Project updated successfully: $projectId');
+      return true;
     } catch (e) {
       print('updateProject failed: $e');
       return false;
