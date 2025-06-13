@@ -289,23 +289,53 @@ app
     }
   );
 
-// // Create employer
-// .post('/', async ({ body, set, request }) => {
-//   const user = (request as any).user as SupabaseUser;
-//   if (!user.user_metadata?.roles?.includes('admin')) {
-//     set.status = 403;
-//     return { success: false, error: 'Only admins can create employers' };
-//   }
+// Employee routes
+app.group("/employers", (app) =>
+  app
+    // Middleware to check authentication and roles
+    .onBeforeHandle(async ({ headers, set, request }) => {
+      const token = headers.authorization?.replace("Bearer ", "");
+      if (!token) {
+        set.status = 401;
+        return { success: false, error: "Unauthorized: No token provided" };
+      }
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser(token);
+      if (error || !user) {
+        set.status = 401;
+        return { success: false, error: "Invalid token" };
+      }
 
-//   const { name, email, contact, details, photo } = body;
-//   let photoUrl = null;
+      // Attach the user to the request object
+      (request as any).user = user as SupabaseUser;
+    })
 
-//   if (photo) {
-//     const { data, error } = await supabase.storage
-//       .from('employees')
-//       .upload(`${Date.now()}_${name}.jpg`, photo, {
-//         contentType: photo.type,
-//       });
+    // GET /employers - List only employers with pagination and filtering
+    // .get("/", async ({ query, set, request }) => {
+    //   const user = (request as any).user as SupabaseUser;
+    //   const userRoles = user.user_metadata?.roles || [];
+
+    //   // Only admins can view the list of employers
+    //   if (!userRoles.includes("admin")) {
+    //     set.status = 403;
+    //     return { success: false, error: "Only admins can view employers" };
+    //   }
+
+    //   try {
+    //     const page = parseInt(query.page || "1");
+    //     const limit = parseInt(query.limit || "10");
+    //     const search = query.search; // Search by name or email
+    //     const offset = (page - 1) * limit;
+    //     const statusFilter = query.status;
+
+    //     // Step 1: Get users with role = "employer"
+    //     const { data: authUsers, error: authError } =
+    //       await supabase.auth.admin.listUsers({
+    //         page,
+    //         perPage: 1000, // Get enough users to filter
+    //       });
 
     //     if (authError) {
     //       set.status = 500;
@@ -514,58 +544,66 @@ app
         set.status = 500;
         return { success: false, error: "Internal server error", details: err };
       }
-
-      // Attach the user to the request object
-      (request as any).user = user as SupabaseUser;
     })
 
-    // Delete employer
-    .delete("/:id", async ({ params, set, request }) => {
-      const user = (request as any).user as SupabaseUser;
-      if (!user.user_metadata?.roles?.includes("admin")) {
-        set.status = 403;
-        return { success: false, error: "Only admins can delete users" };
-      }
+    // PUT /employees/:id - Update employee (matches Flutter updateUser function)
+    .put(
+      "/:id",
+      async ({ body, params, set, request }) => {
+        const user = (request as any).user as SupabaseUser;
+        const userRoles = user.user_metadata?.roles || [];
+        const isAdmin = userRoles.includes("admin");
+        const isSelf = user.id === params.id;
 
-      // Fetch user to determine role
-      const { data: authUser, error: authError } =
-        await supabase.auth.admin.getUserById(params.id);
-      if (authError || !authUser?.user) {
-        set.status = 404;
-        return { success: false, error: "User not found" };
-      }
+        const {
+          role,
+          name,
+          contact,
+          details,
+          status,
+          start_date,
+          photo,
+          email,
+        } = body;
 
-      const role = authUser.user.user_metadata?.roles?.[0];
-      if (!role) {
-        set.status = 400;
-        return { success: false, error: "User has no role" };
-      }
-
-      // Delete from role-specific table
-      const { error: tableError } = await supabase
-        .from(role)
-        .delete()
-        .eq("id", params.id);
-
-      if (tableError) {
-        set.status = 500;
-        return {
-          success: false,
-          error: `Failed to delete ${role}: ${tableError.message}`,
+        // Helper function for contact validation
+        const isValidContact = (contact: string): boolean => {
+          // Phone number validation - adjust regex as needed
+          const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+          return phoneRegex.test(contact.replace(/[\s\-\(\)]/g, ""));
         };
-      }
 
-      // Delete from auth.users
-      const { error: userError } = await supabase.auth.admin.deleteUser(
-        params.id
-      );
-      if (userError) {
-        set.status = 500;
-        return {
-          success: false,
-          error: `Failed to delete user: ${userError.message}`,
+        // Helper function for email validation
+        const isValidEmail = (email: string): boolean => {
+          const emailRegex = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
+          return emailRegex.test(email);
         };
-      }
+
+        try {
+          // Input validation
+          if (name !== undefined && name.trim() === "") {
+            set.status = 400;
+            return {
+              success: false,
+              error: "Validation failed: Name cannot be empty",
+            };
+          }
+
+          if (contact !== undefined && !isValidContact(contact)) {
+            set.status = 400;
+            return {
+              success: false,
+              error: "Validation failed: Invalid contact format",
+            };
+          }
+
+          if (email !== undefined && !isValidEmail(email)) {
+            set.status = 400;
+            return {
+              success: false,
+              error: "Validation failed: Invalid email format",
+            };
+          }
 
           // Authorization checks
           if (!isAdmin && !isSelf) {
@@ -782,187 +820,125 @@ app
       }
     )
 
-    // PUT /projects/:id - Update project
-    .put("/:id", async ({ body, params, set, request }) => {
-      const user = (request as any).user as SupabaseUser;
+    // PATCH /employees/:id/status - Update employee status only
+    .patch(
+      "/:id/status",
+      async ({ body, params, set, request }) => {
+        const user = (request as any).user as SupabaseUser;
+        const userRoles = user.user_metadata?.roles || [];
 
-      // Check if user is admin
-      if (!user.user_metadata?.roles?.includes("admin")) {
-        set.status = 403;
-        return { success: false, error: "Only admins can update projects" };
-      }
-
-      const {
-        name,
-        description,
-        startDate,
-        endDate,
-        size,
-        scope,
-        status,
-        employerId,
-        assignedTo,
-        employeeIds = []
-      } = body;
-
-      try {
-        // Vérifier que le projet existe
-        const { data: existingProject, error: checkError } = await supabase
-          .from("projects")
-          .select("id, name")
-          .eq("id", params.id)
-          .single();
-
-        if (checkError || !existingProject) {
-          set.status = 404;
-          return { success: false, error: "Project not found" };
+        // Only admins and employers can update status
+        if (!userRoles.includes("admin") && !userRoles.includes("employer")) {
+          set.status = 403;
+          return { success: false, error: "Insufficient permissions" };
         }
 
-        // Mise à jour du projet
-        const { data, error } = await supabase
-          .from("projects")
-          .update({
-            name,
-            description,
-            start_date: startDate,
-            end_date: endDate,
-            size,
-            scope,
-            status,
-            employer_id: employerId,
-            assigned_to: assignedTo,
-          })
-          .eq("id", params.id)
-          .select()
-          .single();
+        const { status } = body;
 
-        if (error) {
-          set.status = 400;
-          return { success: false, error: error.message };
-        }
+        try {
+          // Get current user data
+          const { data: currentUser, error: currentUserError } =
+            await supabase.auth.admin.getUserById(params.id);
 
-        // Mise à jour des assignations d'employés
-        if (employeeIds.length >= 0) {
-          // Supprimer les anciennes assignations
-          await supabase
-            .from("project_employees")
-            .delete()
-            .eq("project_id", params.id);
-
-          // Ajouter les nouvelles assignations
-          if (employeeIds.length > 0) {
-            const employeeAssignments = employeeIds.map((employeeId: any) => ({
-              project_id: params.id,
-              employee_id: employeeId
-            }));
-
-            await supabase
-              .from("project_employees")
-              .insert(employeeAssignments);
+          if (currentUserError || !currentUser?.user) {
+            set.status = 404;
+            return { success: false, error: "Employee not found" };
           }
+
+          // Update user metadata
+          const updatedMetadata = {
+            ...currentUser.user.user_metadata,
+            status,
+          };
+
+          const { error: updateError } =
+            await supabase.auth.admin.updateUserById(params.id, {
+              user_metadata: updatedMetadata,
+            });
+
+          if (updateError) {
+            set.status = 500;
+            return {
+              success: false,
+              error: "Failed to update employee status",
+              details: updateError.message,
+            };
+          }
+
+          return {
+            success: true,
+            message: "Employee status updated successfully",
+            data: { id: params.id, status },
+          };
+        } catch (err) {
+          console.error("Error updating employee status:", err);
+          set.status = 500;
+          return {
+            success: false,
+            error: "Internal server error",
+            details: err,
+          };
         }
-
-        return {
-          success: true,
-          data,
-          message: "Project updated successfully"
-        };
-      } catch (err) {
-        console.error("Unexpected error:", err);
-        set.status = 500;
-        return {
-          success: false,
-          error: "Internal server error",
-          details: err,
-        };
+      },
+      {
+        body: t.Object({
+          status: t.String(),
+        }),
       }
-    }, {
-      body: t.Object({
-        name: t.Optional(t.String()),
-        description: t.Optional(t.String()),
-        startDate: t.Optional(t.String()),
-        endDate: t.Optional(t.String()),
-        size: t.Optional(t.String()),
-        scope: t.Optional(t.String()),
-        status: t.Optional(t.String()),
-        employerId: t.Optional(t.String()),
-        assignedTo: t.Optional(t.String()),
-        employeeIds: t.Optional(t.Array(t.String())),
-      }),
-    })
+    )
 
-    // DELETE /projects/:id - Delete project
+    // Delete employer
     .delete("/:id", async ({ params, set, request }) => {
       const user = (request as any).user as SupabaseUser;
-
-      // Check if user is admin
       if (!user.user_metadata?.roles?.includes("admin")) {
         set.status = 403;
-        return { success: false, error: "Only admins can delete projects" };
+        return { success: false, error: "Only admins can delete users" };
       }
 
-      try {
-        const { data, error } = await supabase
-          .from("projects")
-          .delete()
-          .eq("id", params.id)
-          .select()
-          .single();
+      // Fetch user to determine role
+      const { data: authUser, error: authError } =
+        await supabase.auth.admin.getUserById(params.id);
+      if (authError || !authUser?.user) {
+        set.status = 404;
+        return { success: false, error: "User not found" };
+      }
 
-        if (error) {
-          set.status = 400;
-          return { success: false, error: error.message };
-        }
+      const role = authUser.user.user_metadata?.roles?.[0];
+      if (!role) {
+        set.status = 400;
+        return { success: false, error: "User has no role" };
+      }
 
-        if (!data) {
-          set.status = 404;
-          return { success: false, error: "Project not found" };
-        }
+      // Delete from role-specific table
+      const { error: tableError } = await supabase
+        .from(role)
+        .delete()
+        .eq("id", params.id);
 
-        return {
-          success: true,
-          message: "Project deleted successfully",
-          data
-        };
-      } catch (err) {
-        console.error("Unexpected error:", err);
+      if (tableError) {
         set.status = 500;
         return {
           success: false,
-          error: "Internal server error",
-          details: err,
+          error: `Failed to delete ${role}: ${tableError.message}`,
         };
       }
-    })
 
-    // PATCH /projects/:id - Partial update (like employers)
-    .patch("/:id", async ({ body, params, set }) => {
-      const { name } = body;
-
-      try {
-        const { error } = await supabase
-          .from("projects")
-          .update({ name: name })
-          .eq("id", params.id);
-
-        if (error) {
-          set.status = 404;
-          return { success: false, error: "Project not found in projects table" };
-        }
-
-        return { success: true, message: "Project updated successfully" };
-      } catch (err) {
-        console.error("Unexpected error:", err);
+      // Delete from auth.users
+      const { error: userError } = await supabase.auth.admin.deleteUser(
+        params.id
+      );
+      if (userError) {
+        set.status = 500;
         return {
           success: false,
-          error: "Internal server error",
-          details: err,
+          error: `Failed to delete user: ${userError.message}`,
         };
       }
-    }, {
-      body: t.Object({
-        name: t.String(),
-      }),
+
+      return {
+        success: true,
+        message: `${role} and associated user deleted successfully`,
+      };
     })
 );
 
