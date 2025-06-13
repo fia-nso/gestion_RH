@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'controller_provider/employee_management_controller.dart';
 import 'controller_provider/locale_provider.dart';
+import 'controller_provider/project_management_controller.dart';
 import 'pages/home_page.dart';
 import 'pages/login_page.dart';
 import 'pages/register_page.dart';
@@ -29,6 +30,7 @@ void main() async {
         ChangeNotifierProvider.value(value: AuthController()),
         ChangeNotifierProvider(create: (_) => EmployeeManagementController()),
         ChangeNotifierProvider(create: (_) => LeaveManagementController()),
+        ChangeNotifierProvider(create: (_) => ProjectManagementController()),
       ],
       child: const MyApp(),
     ),

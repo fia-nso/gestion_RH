@@ -94,5 +94,22 @@
   "end_time_after_start": "End time must be after start time",
   "absence_recorded_success": "Absence recorded successfully",
   "error_generic": "An error occurred",
-  "projects": "Projects"
+  "projects": "Projects",
+  "create_project": "Create Project",
+  "edit_project": "Edit Project",
+  "project_name": "Project Name",
+  "size_and_scope": "Size and Scope",
+  "assigned_employers": "Assigned Employers",
+  "add_employer": "Add Employer",
+  "select_employer": "Select Employer",
+  "description": "description",
+  "add": "add",
+  "absence_create_success": "Absence created successfully",
+  "end_date_label": "End Date (Optional)",
+  "not_set": "Not set",
+  "select_status": "Select status",
+  "project_size": "Size",
+  "project_scope": "Scope"
+
+
 }

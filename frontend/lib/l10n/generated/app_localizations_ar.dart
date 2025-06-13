@@ -200,7 +200,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get select_duration => 'حدد المدة';
 
   @override
-  String get select_date => ' حدد التاريخ ';
+  String get select_date => 'حدد التاريخ';
 
   @override
   String get sick_leave => 'إجازة مرضية';
@@ -293,4 +293,49 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get projects => 'المشاريع';
+
+  @override
+  String get create_project => 'إنشاء مشروع';
+
+  @override
+  String get edit_project => 'تعديل مشروع';
+
+  @override
+  String get project_name => 'اسم المشروع';
+
+  @override
+  String get size_and_scope => 'الحجم والنطاق';
+
+  @override
+  String get assigned_employers => 'أصحاب العمل المعينون';
+
+  @override
+  String get add_employer => 'إضافة صاحب عمل';
+
+  @override
+  String get select_employer => 'اختر صاحب عمل';
+
+  @override
+  String get description => ' التفاصيل';
+
+  @override
+  String get add => 'إضافة';
+
+  @override
+  String get absence_create_success => 'تم تسجيل الغياب بنجاح';
+
+  @override
+  String get end_date_label => 'تاريخ الانتهاء (اختياري)';
+
+  @override
+  String get not_set => 'غير محدد';
+
+  @override
+  String get select_status => 'اختر الحالة';
+
+  @override
+  String get project_size => 'الحجم';
+
+  @override
+  String get project_scope => 'النطاق';
 }

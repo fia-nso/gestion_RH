@@ -293,4 +293,49 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get projects => 'Projects';
+
+  @override
+  String get create_project => 'Create Project';
+
+  @override
+  String get edit_project => 'Edit Project';
+
+  @override
+  String get project_name => 'Project Name';
+
+  @override
+  String get size_and_scope => 'Size and Scope';
+
+  @override
+  String get assigned_employers => 'Assigned Employers';
+
+  @override
+  String get add_employer => 'Add Employer';
+
+  @override
+  String get select_employer => 'Select Employer';
+
+  @override
+  String get description => 'description';
+
+  @override
+  String get add => 'add';
+
+  @override
+  String get absence_create_success => 'Absence created successfully';
+
+  @override
+  String get end_date_label => 'End Date (Optional)';
+
+  @override
+  String get not_set => 'Not set';
+
+  @override
+  String get select_status => 'Select status';
+
+  @override
+  String get project_size => 'Size';
+
+  @override
+  String get project_scope => 'Scope';
 }

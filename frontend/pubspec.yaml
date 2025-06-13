@@ -46,6 +46,7 @@ dependencies:
   http: ^1.2.2
   dio: ^5.8.0+1
   google_nav_bar: ^5.0.7
+  uuid: ^4.5.1
 
 dev_dependencies:
   flutter_test:

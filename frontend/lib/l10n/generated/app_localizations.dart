@@ -661,6 +661,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Projects'**
   String get projects;
+
+  /// No description provided for @create_project.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Project'**
+  String get create_project;
+
+  /// No description provided for @edit_project.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Project'**
+  String get edit_project;
+
+  /// No description provided for @project_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Project Name'**
+  String get project_name;
+
+  /// No description provided for @size_and_scope.
+  ///
+  /// In en, this message translates to:
+  /// **'Size and Scope'**
+  String get size_and_scope;
+
+  /// No description provided for @assigned_employers.
+  ///
+  /// In en, this message translates to:
+  /// **'Assigned Employers'**
+  String get assigned_employers;
+
+  /// No description provided for @add_employer.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Employer'**
+  String get add_employer;
+
+  /// No description provided for @select_employer.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Employer'**
+  String get select_employer;
+
+  /// No description provided for @description.
+  ///
+  /// In en, this message translates to:
+  /// **'description'**
+  String get description;
+
+  /// No description provided for @add.
+  ///
+  /// In en, this message translates to:
+  /// **'add'**
+  String get add;
+
+  /// No description provided for @absence_create_success.
+  ///
+  /// In en, this message translates to:
+  /// **'Absence created successfully'**
+  String get absence_create_success;
+
+  /// No description provided for @end_date_label.
+  ///
+  /// In en, this message translates to:
+  /// **'End Date (Optional)'**
+  String get end_date_label;
+
+  /// No description provided for @not_set.
+  ///
+  /// In en, this message translates to:
+  /// **'Not set'**
+  String get not_set;
+
+  /// No description provided for @select_status.
+  ///
+  /// In en, this message translates to:
+  /// **'Select status'**
+  String get select_status;
+
+  /// No description provided for @project_size.
+  ///
+  /// In en, this message translates to:
+  /// **'Size'**
+  String get project_size;
+
+  /// No description provided for @project_scope.
+  ///
+  /// In en, this message translates to:
+  /// **'Scope'**
+  String get project_scope;
 }
 
 class _AppLocalizationsDelegate
