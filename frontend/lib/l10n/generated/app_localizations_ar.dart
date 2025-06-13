@@ -34,7 +34,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cancel => 'إلغاء';
 
   @override
-  String get retry => 'أعد المحاولة';
+  String get retry => 'إعادة المحاولة';
 
   @override
   String get no_employees => 'لا يوجد موظفون';
@@ -334,4 +334,52 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get project_scope => 'النطاق';
+
+  @override
+  String get search_projects => 'البحث في المشاريع...';
+
+  @override
+  String get sort => 'ترتيب';
+
+  @override
+  String get sort_by_name => 'ترتيب حسب الاسم';
+
+  @override
+  String get sort_by_date => 'ترتيب حسب التاريخ';
+
+  @override
+  String get sort_by_status => 'ترتيب حسب الحالة';
+
+  @override
+  String get all => 'الكل';
+
+  @override
+  String get no_projects_found => 'لم يتم العثور على مشاريع';
+
+  @override
+  String get no_projects_yet => 'لا توجد مشاريع بعد';
+
+  @override
+  String get try_different_filters => 'حاول تعديل البحث أو الفلاتر';
+
+  @override
+  String get create_first_project => 'أنشئ أول مشروع للبدء';
+
+  @override
+  String get project_details => 'تفاصيل المشروع';
+
+  @override
+  String get timeline => 'الجدول الزمني';
+
+  @override
+  String get started => 'تاريخ البدء';
+
+  @override
+  String get days_elapsed => 'الأيام المنقضية';
+
+  @override
+  String get total_duration => 'المدة الإجمالية';
+
+  @override
+  String get assignment_info_placeholder => 'سيتم عرض معلومات التعيين هنا';
 }

@@ -67,6 +67,8 @@ class _HomePageBodyState extends State<_HomePageBody> {
           semanticLabel: AppLocalizations.of(context)!.employees,
         ),
       );
+    }
+    if (userRole == 'admin' || userRole == 'employer') {
       pages.add(const ProjectManagementView()); // Add Projects page first
       navButtons.add(
         GButton(
@@ -618,8 +620,8 @@ class _HomePageBodyState extends State<_HomePageBody> {
   Widget _buildGenericProfile(
       BuildContext context, AuthController authController, String userRole) {
     final leaveController = context.watch<LeaveManagementController>();
-    final userName = authController.user.name;
-    final userStatus = authController.user.status;
+    // final userName = authController.user.name;
+    // final userStatus = authController.user.status;
     final userId = authController.user.id;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -2467,13 +2469,25 @@ class _EditProjectDialogState extends State<EditProjectDialog> {
   }
 }
 
-// 2. Mise à jour du ProjectManagementView (remplacez votre code existant)
-
-class ProjectManagementView extends StatelessWidget {
+class ProjectManagementView extends StatefulWidget {
   const ProjectManagementView({super.key});
 
   @override
+  State<ProjectManagementView> createState() => _ProjectManagementViewState();
+}
+
+class _ProjectManagementViewState extends State<ProjectManagementView> {
+  String _searchQuery = '';
+  ProjectStatus? _statusFilter;
+  String _sortBy = 'name'; // name, startDate, status
+  bool _sortAscending = true;
+
+  @override
   Widget build(BuildContext context) {
+    final authController = context.watch<AuthController>();
+    final userRole = authController.user.currentRole.id;
+    final appLocalizations = AppLocalizations.of(context)!;
+
     return ChangeNotifierProvider(
       create: (_) => ProjectManagementController(),
       child: Scaffold(
@@ -2483,27 +2497,273 @@ class ProjectManagementView extends StatelessWidget {
               return const Center(child: CircularProgressIndicator());
             }
             if (controller.error != null) {
-              return Center(child: Text(controller.error!));
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.error_outline, size: 64, color: Colors.red),
+                    SizedBox(height: 16),
+                    Text(controller.error!),
+                    SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: controller.loadProjects,
+                      child: Text(appLocalizations.retry),
+                    ),
+                  ],
+                ),
+              );
             }
-            return ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: controller.projects.length,
-              itemBuilder: (context, index) {
-                final project = controller.projects[index];
-                return ProjectCard(
-                  project: project,
-                  onEdit: () =>
-                      _showEditProjectDialog(context, project, controller),
-                );
-              },
+
+            final filteredProjects =
+                _filterAndSortProjects(controller.projects);
+
+            return Column(
+              children: [
+                _buildSearchAndFilterBar(context, appLocalizations),
+                Expanded(
+                  child: filteredProjects.isEmpty
+                      ? _buildEmptyState(context, appLocalizations)
+                      : ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: filteredProjects.length,
+                          itemBuilder: (context, index) {
+                            final project = filteredProjects[index];
+                            return ProjectCard(
+                              project: project,
+                              onTap: () =>
+                                  _navigateToProjectDetails(context, project),
+                              onEdit: userRole == 'admin'
+                                  ? () => _showEditProjectDialog(
+                                      context, project, controller)
+                                  : null,
+                            );
+                          },
+                        ),
+                ),
+              ],
             );
           },
         ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () => _showProjectDialog(context),
-          child: const Icon(Icons.add),
-          tooltip: 'Créer un projet',
+        floatingActionButton: Consumer<AuthController>(
+          builder: (context, authController, child) {
+            // Only show create button for admins
+            if (authController.user.currentRole.id == 'admin') {
+              return FloatingActionButton(
+                onPressed: () => _showProjectDialog(context),
+                child: const Icon(Icons.add),
+                tooltip: appLocalizations.create_project,
+              );
+            }
+            return const SizedBox.shrink();
+          },
         ),
+      ),
+    );
+  }
+
+  Widget _buildSearchAndFilterBar(
+      BuildContext context, AppLocalizations appLocalizations) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  decoration: InputDecoration(
+                    hintText: appLocalizations.search_projects,
+                    prefixIcon: const Icon(Icons.search),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value.toLowerCase();
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(width: 12),
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.sort),
+                tooltip: appLocalizations.sort,
+                onSelected: (value) {
+                  setState(() {
+                    if (_sortBy == value) {
+                      _sortAscending = !_sortAscending;
+                    } else {
+                      _sortBy = value;
+                      _sortAscending = true;
+                    }
+                  });
+                },
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: 'name',
+                    child: Row(
+                      children: [
+                        Icon(Icons.sort_by_alpha),
+                        SizedBox(width: 8),
+                        Text(appLocalizations.sort_by_name),
+                        if (_sortBy == 'name') ...[
+                          Spacer(),
+                          Icon(_sortAscending
+                              ? Icons.arrow_upward
+                              : Icons.arrow_downward),
+                        ],
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'startDate',
+                    child: Row(
+                      children: [
+                        Icon(Icons.date_range),
+                        SizedBox(width: 8),
+                        Text(appLocalizations.sort_by_date),
+                        if (_sortBy == 'startDate') ...[
+                          Spacer(),
+                          Icon(_sortAscending
+                              ? Icons.arrow_upward
+                              : Icons.arrow_downward),
+                        ],
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'status',
+                    child: Row(
+                      children: [
+                        Icon(Icons.flag),
+                        SizedBox(width: 8),
+                        Text(appLocalizations.sort_by_status),
+                        if (_sortBy == 'status') ...[
+                          Spacer(),
+                          Icon(_sortAscending
+                              ? Icons.arrow_upward
+                              : Icons.arrow_downward),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                FilterChip(
+                  label: Text(appLocalizations.all),
+                  selected: _statusFilter == null,
+                  onSelected: (selected) {
+                    setState(() {
+                      _statusFilter = selected ? null : _statusFilter;
+                    });
+                  },
+                ),
+                const SizedBox(width: 8),
+                ...ProjectStatus.values.map((status) => Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: FilterChip(
+                        label: Text(status.value),
+                        selected: _statusFilter == status,
+                        onSelected: (selected) {
+                          setState(() {
+                            _statusFilter = selected ? status : null;
+                          });
+                        },
+                      ),
+                    )),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(
+      BuildContext context, AppLocalizations appLocalizations) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.folder_outlined, size: 64, color: Colors.grey[400]),
+          const SizedBox(height: 16),
+          Text(
+            _searchQuery.isNotEmpty || _statusFilter != null
+                ? appLocalizations.no_projects_found
+                : appLocalizations.no_projects_yet,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Colors.grey[600],
+                ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _searchQuery.isNotEmpty || _statusFilter != null
+                ? appLocalizations.try_different_filters
+                : appLocalizations.create_first_project,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.grey[500],
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Project> _filterAndSortProjects(List<Project> projects) {
+    var filtered = projects.where((project) {
+      final matchesSearch = _searchQuery.isEmpty ||
+          project.name.toLowerCase().contains(_searchQuery) ||
+          project.description.toLowerCase().contains(_searchQuery);
+      final matchesStatus =
+          _statusFilter == null || project.status == _statusFilter;
+      return matchesSearch && matchesStatus;
+    }).toList();
+
+    filtered.sort((a, b) {
+      int comparison;
+      switch (_sortBy) {
+        case 'name':
+          comparison = a.name.compareTo(b.name);
+          break;
+        case 'startDate':
+          comparison = a.startDate.compareTo(b.startDate);
+          break;
+        case 'status':
+          comparison = a.status.value.compareTo(b.status.value);
+          break;
+        default:
+          comparison = 0;
+      }
+      return _sortAscending ? comparison : -comparison;
+    });
+
+    return filtered;
+  }
+
+  void _navigateToProjectDetails(BuildContext context, Project project) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => ProjectDetailsView(project: project),
       ),
     );
   }
@@ -2535,24 +2795,30 @@ class ProjectManagementView extends StatelessWidget {
   }
 }
 
-// 3. Mise à jour du ProjectCard (remplacez votre code existant)
-
+// Enhanced ProjectCard with better visual design
 class ProjectCard extends StatelessWidget {
   final Project project;
-  final VoidCallback onEdit;
+  final VoidCallback onTap;
+  final VoidCallback? onEdit;
 
-  const ProjectCard({super.key, required this.project, required this.onEdit});
+  const ProjectCard({
+    super.key,
+    required this.project,
+    required this.onTap,
+    this.onEdit,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final progress = _calculateProgress();
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
+      elevation: 2,
       child: InkWell(
-        onTap: () {
-          // Vous pouvez ajouter une navigation vers les détails du projet ici
-        },
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -2569,41 +2835,74 @@ class ProjectCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  _buildStatusChip(project.status, context),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildStatusChip(project.status, context),
+                      if (onEdit != null) ...[
+                        const SizedBox(width: 8),
+                        IconButton(
+                          icon: const Icon(Icons.edit, size: 20),
+                          onPressed: onEdit,
+                          tooltip: AppLocalizations.of(context)!.edit,
+                        ),
+                      ],
+                    ],
+                  ),
                 ],
               ),
               const SizedBox(height: 8),
               Text(
                 project.description,
-                style: theme.textTheme.bodyMedium,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: Colors.grey[600],
+                ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 12),
+              if (progress != null) ...[
+                Row(
+                  children: [
+                    Expanded(
+                      child: LinearProgressIndicator(
+                        value: progress,
+                        backgroundColor: Colors.grey[300],
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          _getProgressColor(progress),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${(progress * 100).round()}%',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+              ],
               Row(
                 children: [
                   _buildInfoItem(
                     icon: Icons.calendar_today,
-                    label:
-                        '${DateFormat.yMMMd().format(project.startDate)} - ${project.endDate != null ? DateFormat.yMMMd().format(project.endDate!) : 'En cours'}',
+                    label: DateFormat.yMMMd().format(project.startDate),
                     context: context,
                   ),
+                  const SizedBox(width: 16),
+                  if (project.endDate != null)
+                    _buildInfoItem(
+                      icon: Icons.event,
+                      label: DateFormat.yMMMd().format(project.endDate!),
+                      context: context,
+                    ),
                   const Spacer(),
                   _buildInfoItem(
                     icon: Icons.info_outline,
-                    label: '${project.size} / ${project.scope}',
+                    label: '${project.size}',
                     context: context,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton.icon(
-                    onPressed: onEdit,
-                    icon: const Icon(Icons.edit, size: 18),
-                    label: Text('Modifier'),
                   ),
                 ],
               ),
@@ -2616,28 +2915,36 @@ class ProjectCard extends StatelessWidget {
 
   Widget _buildStatusChip(ProjectStatus status, BuildContext context) {
     Color chipColor;
+    IconData icon;
+
     switch (status) {
       case ProjectStatus.planning:
         chipColor = Colors.orange;
+        icon = Icons.schedule;
         break;
       case ProjectStatus.active:
         chipColor = Colors.blue;
+        icon = Icons.play_arrow;
         break;
       case ProjectStatus.completed:
         chipColor = Colors.green;
+        icon = Icons.check_circle;
         break;
       case ProjectStatus.onHold:
         chipColor = Colors.grey;
+        icon = Icons.pause;
         break;
-      case ProjectStatus.values:
+      default:
         chipColor = Colors.red;
+        icon = Icons.error;
         break;
     }
 
     return Chip(
+      avatar: Icon(icon, size: 16, color: Colors.white),
       label: Text(
         status.value,
-        style: TextStyle(color: Colors.white, fontSize: 12),
+        style: const TextStyle(color: Colors.white, fontSize: 12),
       ),
       backgroundColor: chipColor,
     );
@@ -2651,13 +2958,459 @@ class ProjectCard extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 16, color: Colors.grey[600]),
+        Icon(icon, size: 14, color: Colors.grey[600]),
         const SizedBox(width: 4),
         Text(
           label,
-          style: Theme.of(context).textTheme.bodySmall,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Colors.grey[600],
+              ),
         ),
       ],
+    );
+  }
+
+  double? _calculateProgress() {
+    if (project.endDate == null) return null;
+
+    final now = DateTime.now();
+    final totalDuration = project.endDate!.difference(project.startDate).inDays;
+    final elapsedDuration = now.difference(project.startDate).inDays;
+
+    if (totalDuration <= 0) return 1.0;
+    if (elapsedDuration <= 0) return 0.0;
+
+    final progress = elapsedDuration / totalDuration;
+    return progress.clamp(0.0, 1.0);
+  }
+
+  Color _getProgressColor(double progress) {
+    if (progress < 0.3) return Colors.red;
+    if (progress < 0.7) return Colors.orange;
+    return Colors.green;
+  }
+}
+
+// New ProjectDetailsView for detailed project information
+class ProjectDetailsView extends StatelessWidget {
+  final Project project;
+
+  const ProjectDetailsView({super.key, required this.project});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final appLocalizations = AppLocalizations.of(context)!;
+    final authController = context.watch<AuthController>();
+    final userRole = authController.user.currentRole.id;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(project.name),
+        actions: [
+          if (userRole == 'admin')
+            IconButton(
+              icon: const Icon(Icons.edit),
+              onPressed: () => _showEditDialog(context),
+              tooltip: appLocalizations.edit,
+            ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildHeaderSection(context, theme, appLocalizations),
+            const SizedBox(height: 24),
+            _buildDetailsSection(context, theme, appLocalizations),
+            const SizedBox(height: 24),
+            _buildTimelineSection(context, theme, appLocalizations),
+            const SizedBox(height: 24),
+            _buildAssignmentsSection(context, theme, appLocalizations),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeaderSection(BuildContext context, ThemeData theme,
+      AppLocalizations appLocalizations) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        project.name,
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      _buildStatusChip(project.status, context),
+                    ],
+                  ),
+                ),
+                _buildProgressIndicator(context),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              appLocalizations.description,
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              project.description,
+              style: theme.textTheme.bodyMedium,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailsSection(BuildContext context, ThemeData theme,
+      AppLocalizations appLocalizations) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              appLocalizations.project_details,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            _buildDetailRow(
+              icon: Icons.straighten,
+              label: appLocalizations.project_size,
+              value: project.size,
+              context: context,
+            ),
+            const SizedBox(height: 12),
+            _buildDetailRow(
+              icon: Icons.workspaces,
+              label: appLocalizations.project_scope,
+              value: project.scope,
+              context: context,
+            ),
+            const SizedBox(height: 12),
+            _buildDetailRow(
+              icon: Icons.calendar_today,
+              label: appLocalizations.start_date,
+              value: DateFormat.yMMMMd().format(project.startDate),
+              context: context,
+            ),
+            if (project.endDate != null) ...[
+              const SizedBox(height: 12),
+              _buildDetailRow(
+                icon: Icons.event,
+                label: appLocalizations.end_date_label,
+                value: DateFormat.yMMMMd().format(project.endDate!),
+                context: context,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTimelineSection(BuildContext context, ThemeData theme,
+      AppLocalizations appLocalizations) {
+    final daysElapsed = DateTime.now().difference(project.startDate).inDays;
+    final totalDays = project.endDate?.difference(project.startDate).inDays;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              appLocalizations.timeline,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Icon(Icons.play_arrow, color: Colors.green),
+                const SizedBox(width: 8),
+                Text(
+                  '${appLocalizations.started}: ${DateFormat.yMMMMd().format(project.startDate)}',
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(Icons.access_time, color: Colors.blue),
+                const SizedBox(width: 8),
+                Text(
+                  '${appLocalizations.days_elapsed}: $daysElapsed ${appLocalizations.days}',
+                ),
+              ],
+            ),
+            if (project.endDate != null && totalDays != null) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(Icons.flag, color: Colors.orange),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${appLocalizations.total_duration}: $totalDays ${appLocalizations.days}',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              LinearProgressIndicator(
+                value: (daysElapsed / totalDays).clamp(0.0, 1.0),
+                backgroundColor: Colors.grey[300],
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  _getProgressColor((daysElapsed / totalDays).clamp(0.0, 1.0)),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAssignmentsSection(BuildContext context, ThemeData theme,
+      AppLocalizations appLocalizations) {
+    // This section would show assigned employees if that data is available
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              appLocalizations.assigned_employers,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            // For now, show a placeholder. In a real app, you'd display actual assignments
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.grey[600]),
+                  const SizedBox(width: 8),
+                  Text(
+                    appLocalizations.assignment_info_placeholder ??
+                        'Assignment information will be displayed here',
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow({
+    required IconData icon,
+    required String label,
+    required String value,
+    required BuildContext context,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 20, color: Colors.grey[600]),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w500,
+                    ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatusChip(ProjectStatus status, BuildContext context) {
+    Color chipColor;
+    IconData icon;
+
+    switch (status) {
+      case ProjectStatus.planning:
+        chipColor = Colors.orange;
+        icon = Icons.schedule;
+        break;
+      case ProjectStatus.active:
+        chipColor = Colors.blue;
+        icon = Icons.play_arrow;
+        break;
+      case ProjectStatus.completed:
+        chipColor = Colors.green;
+        icon = Icons.check_circle;
+        break;
+      case ProjectStatus.onHold:
+        chipColor = Colors.grey;
+        icon = Icons.pause;
+        break;
+      default:
+        chipColor = Colors.red;
+        icon = Icons.error;
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: chipColor,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: Colors.white),
+          const SizedBox(width: 6),
+          Text(
+            status.value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProgressIndicator(BuildContext context) {
+    if (project.endDate == null) {
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          children: [
+            Icon(Icons.all_inclusive, color: Colors.grey[600]),
+            const SizedBox(height: 4),
+            Text(
+              'Ongoing',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final progress = _calculateProgress();
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        children: [
+          SizedBox(
+            width: 40,
+            height: 40,
+            child: CircularProgressIndicator(
+              value: progress,
+              backgroundColor: Colors.grey[300],
+              valueColor:
+                  AlwaysStoppedAnimation<Color>(_getProgressColor(progress)),
+              strokeWidth: 4,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '${(progress * 100).round()}%',
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  double _calculateProgress() {
+    if (project.endDate == null) return 0.0;
+
+    final now = DateTime.now();
+    final totalDuration = project.endDate!.difference(project.startDate).inDays;
+    final elapsedDuration = now.difference(project.startDate).inDays;
+
+    if (totalDuration <= 0) return 1.0;
+    if (elapsedDuration <= 0) return 0.0;
+
+    final progress = elapsedDuration / totalDuration;
+    return progress.clamp(0.0, 1.0);
+  }
+
+  Color _getProgressColor(double progress) {
+    if (progress < 0.3) return Colors.red;
+    if (progress < 0.7) return Colors.orange;
+    return Colors.green;
+  }
+
+  void _showEditDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => ChangeNotifierProvider(
+        create: (_) => ProjectManagementController(),
+        child: Consumer<ProjectManagementController>(
+          builder: (context, controller, child) {
+            return EditProjectDialog(
+              project: project,
+              controller: controller,
+            );
+          },
+        ),
+      ),
     );
   }
 }

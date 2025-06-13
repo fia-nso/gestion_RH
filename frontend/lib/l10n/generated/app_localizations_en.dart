@@ -225,7 +225,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get remaining => 'Remaining';
 
   @override
-  String get days => 'Days';
+  String get days => 'days';
 
   @override
   String get hours => 'Hours';
@@ -334,4 +334,52 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get project_scope => 'Scope';
+
+  @override
+  String get search_projects => 'Search projects...';
+
+  @override
+  String get sort => 'Sort';
+
+  @override
+  String get sort_by_name => 'Sort by Name';
+
+  @override
+  String get sort_by_date => 'Sort by Date';
+
+  @override
+  String get sort_by_status => 'Sort by Status';
+
+  @override
+  String get all => 'All';
+
+  @override
+  String get no_projects_found => 'No projects found';
+
+  @override
+  String get no_projects_yet => 'No projects yet';
+
+  @override
+  String get try_different_filters => 'Try adjusting your search or filters';
+
+  @override
+  String get create_first_project => 'Create your first project to get started';
+
+  @override
+  String get project_details => 'Project Details';
+
+  @override
+  String get timeline => 'Timeline';
+
+  @override
+  String get started => 'Started';
+
+  @override
+  String get days_elapsed => 'Days elapsed';
+
+  @override
+  String get total_duration => 'Total duration';
+
+  @override
+  String get assignment_info_placeholder => 'Assignment information will be displayed here';
 }

@@ -109,7 +109,27 @@
   "not_set": "Not set",
   "select_status": "Select status",
   "project_size": "Size",
-  "project_scope": "Scope"
+  "project_scope": "Scope",
+  "search_projects": "Search projects...",
+  "sort": "Sort",
+  "sort_by_name": "Sort by Name",
+  "sort_by_date": "Sort by Date", 
+  "sort_by_status": "Sort by Status",
+  "all": "All",
+  "no_projects_found": "No projects found",
+  "no_projects_yet": "No projects yet",
+  "try_different_filters": "Try adjusting your search or filters",
+  "create_first_project": "Create your first project to get started",
+  "retry": "Retry",
+  "project_details": "Project Details",
+  "timeline": "Timeline",
+  "started": "Started",
+  "days_elapsed": "Days elapsed",
+  "days": "days",
+  "total_duration": "Total duration",
+  "assignment_info_placeholder": "Assignment information will be displayed here",
+  "not_set": "Not set"
+
 
 
 }

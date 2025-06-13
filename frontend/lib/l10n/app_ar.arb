@@ -109,7 +109,27 @@
   "not_set": "غير محدد",
   "select_status": "اختر الحالة",
   "project_size": "الحجم",
-  "project_scope": "النطاق"
+  "project_scope": "النطاق",
+  "search_projects": "البحث في المشاريع...",
+  "sort": "ترتيب",
+  "sort_by_name": "ترتيب حسب الاسم",
+  "sort_by_date": "ترتيب حسب التاريخ",
+  "sort_by_status": "ترتيب حسب الحالة",
+  "all": "الكل",
+  "no_projects_found": "لم يتم العثور على مشاريع",
+  "no_projects_yet": "لا توجد مشاريع بعد",
+  "try_different_filters": "حاول تعديل البحث أو الفلاتر",
+  "create_first_project": "أنشئ أول مشروع للبدء",
+  "retry": "إعادة المحاولة",
+  "project_details": "تفاصيل المشروع",
+  "timeline": "الجدول الزمني",
+  "started": "تاريخ البدء",
+  "days_elapsed": "الأيام المنقضية",
+  "days": "أيام",
+  "total_duration": "المدة الإجمالية",
+  "assignment_info_placeholder": "سيتم عرض معلومات التعيين هنا",
+  "not_set": "غير محدد"
+
 
 
 }

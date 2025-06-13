@@ -530,7 +530,7 @@ abstract class AppLocalizations {
   /// No description provided for @days.
   ///
   /// In en, this message translates to:
-  /// **'Days'**
+  /// **'days'**
   String get days;
 
   /// No description provided for @hours.
@@ -748,6 +748,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Scope'**
   String get project_scope;
+
+  /// No description provided for @search_projects.
+  ///
+  /// In en, this message translates to:
+  /// **'Search projects...'**
+  String get search_projects;
+
+  /// No description provided for @sort.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort'**
+  String get sort;
+
+  /// No description provided for @sort_by_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort by Name'**
+  String get sort_by_name;
+
+  /// No description provided for @sort_by_date.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort by Date'**
+  String get sort_by_date;
+
+  /// No description provided for @sort_by_status.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort by Status'**
+  String get sort_by_status;
+
+  /// No description provided for @all.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get all;
+
+  /// No description provided for @no_projects_found.
+  ///
+  /// In en, this message translates to:
+  /// **'No projects found'**
+  String get no_projects_found;
+
+  /// No description provided for @no_projects_yet.
+  ///
+  /// In en, this message translates to:
+  /// **'No projects yet'**
+  String get no_projects_yet;
+
+  /// No description provided for @try_different_filters.
+  ///
+  /// In en, this message translates to:
+  /// **'Try adjusting your search or filters'**
+  String get try_different_filters;
+
+  /// No description provided for @create_first_project.
+  ///
+  /// In en, this message translates to:
+  /// **'Create your first project to get started'**
+  String get create_first_project;
+
+  /// No description provided for @project_details.
+  ///
+  /// In en, this message translates to:
+  /// **'Project Details'**
+  String get project_details;
+
+  /// No description provided for @timeline.
+  ///
+  /// In en, this message translates to:
+  /// **'Timeline'**
+  String get timeline;
+
+  /// No description provided for @started.
+  ///
+  /// In en, this message translates to:
+  /// **'Started'**
+  String get started;
+
+  /// No description provided for @days_elapsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Days elapsed'**
+  String get days_elapsed;
+
+  /// No description provided for @total_duration.
+  ///
+  /// In en, this message translates to:
+  /// **'Total duration'**
+  String get total_duration;
+
+  /// No description provided for @assignment_info_placeholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Assignment information will be displayed here'**
+  String get assignment_info_placeholder;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
