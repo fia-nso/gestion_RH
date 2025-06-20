@@ -102,7 +102,7 @@
   "assigned_employers": "أصحاب العمل المعينون",
   "add_employer": "إضافة صاحب عمل",
   "select_employer": "اختر صاحب عمل",
-  "description": " التفاصيل",
+  "description": "الوصف",
   "add": "إضافة",
   "absence_create_success": "تم تسجيل الغياب بنجاح",
   "end_date_label": "تاريخ الانتهاء (اختياري)",
@@ -128,8 +128,8 @@
   "days": "أيام",
   "total_duration": "المدة الإجمالية",
   "assignment_info_placeholder": "سيتم عرض معلومات التعيين هنا",
-  "not_set": "غير محدد"
-
-
-
+  "not_set": "غير محدد",
+  "people_manager": "  مدير أشخاص معين",
+  "no_people_manager": "لا يوجد مدير أشخاص معين",
+  "required_field": "الحقل مطلوب"
 }

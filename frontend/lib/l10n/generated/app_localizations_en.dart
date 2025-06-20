@@ -382,4 +382,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get assignment_info_placeholder => 'Assignment information will be displayed here';
+
+  @override
+  String get people_manager => 'people manager';
+
+  @override
+  String get no_people_manager => 'No People Manager assigned';
+
+  @override
+  String get required_field => 'This field is required';
 }

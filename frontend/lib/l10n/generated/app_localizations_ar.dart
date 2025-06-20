@@ -312,7 +312,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get select_employer => 'اختر صاحب عمل';
 
   @override
-  String get description => ' التفاصيل';
+  String get description => 'الوصف';
 
   @override
   String get add => 'إضافة';
@@ -382,4 +382,13 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get assignment_info_placeholder => 'سيتم عرض معلومات التعيين هنا';
+
+  @override
+  String get people_manager => '  مدير أشخاص معين';
+
+  @override
+  String get no_people_manager => 'لا يوجد مدير أشخاص معين';
+
+  @override
+  String get required_field => 'الحقل مطلوب';
 }

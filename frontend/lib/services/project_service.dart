@@ -22,6 +22,7 @@ class ProjectService {
     required String scope,
     ProjectStatus status = ProjectStatus.planning,
     List<Map<String, String>>? employerAssignments,
+    // String? peopleManagerId,
   }) async {
     try {
       final currentUser = client.auth.currentUser;
@@ -42,11 +43,12 @@ class ProjectService {
       final projectData = {
         'name': name.trim(),
         'description': description.trim(),
-        'startDate': startDate.toIso8601String(),
-        'endDate': endDate?.toIso8601String(),
+        'start_date': startDate.toIso8601String(),
+        'end_date': endDate?.toIso8601String(),
         'size': size.trim(),
         'scope': scope.trim(),
         'status': status.value,
+        // 'people_manager_id': peopleManagerId,
         'employer_assignments': employerAssignments
             ?.map((a) => {
                   'employer_id': a['employer_id'],
@@ -80,6 +82,7 @@ class ProjectService {
     String? scope,
     ProjectStatus? status,
     List<Map<String, String>>? employerAssignments,
+    ProjectRole? role,
   }) async {
     try {
       final currentUser = client.auth.currentUser;
@@ -109,9 +112,10 @@ class ProjectService {
       if (size != null) updates['size'] = size.trim();
       if (scope != null) updates['scope'] = scope.trim();
       if (status != null) updates['status'] = status.value;
-      updates['updated_at'] = DateTime.now().toIso8601String();
+      // if (role != null)
+      //   updates['role'] = role;
+      // updates['updated_at'] = DateTime.now().toIso8601String();
 
-      // Utiliser directement Supabase au lieu de l'API pour la mise à jour
       final response =
           await client.from('projects').update(updates).eq('id', projectId);
 

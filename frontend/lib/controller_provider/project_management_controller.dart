@@ -44,7 +44,7 @@ class ProjectManagementController extends ChangeNotifier {
       return false;
     }
 
-    loading = true;
+    loading = true; 
     error = null;
     notifyListeners();
 
@@ -76,17 +76,17 @@ class ProjectManagementController extends ChangeNotifier {
     }
   }
 
-  Future<bool> updateProject({
-    required String projectId,
-    String? name,
-    String? description,
-    DateTime? startDate,
-    DateTime? endDate,
-    String? size,
-    String? scope,
-    ProjectStatus? status,
-    List<Map<String, String>>? employerAssignments,
-  }) async {
+  Future<bool> updateProject(
+      {required String projectId,
+      String? name,
+      String? description,
+      DateTime? startDate,
+      DateTime? endDate,
+      String? size,
+      String? scope,
+      ProjectStatus? status,
+      List<Map<String, String>>? employerAssignments,
+      ProjectRole? role}) async {
     if (name != null && name.trim().isEmpty ||
         description != null && description.trim().isEmpty ||
         size != null && size.trim().isEmpty ||
@@ -111,6 +111,7 @@ class ProjectManagementController extends ChangeNotifier {
         scope: scope,
         status: status,
         employerAssignments: employerAssignments,
+        role: role,
       );
 
       if (success) {

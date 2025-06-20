@@ -10,7 +10,9 @@ class EmployeeManagementController extends ChangeNotifier {
   List<Employer> employees = [];
   bool loading = false;
   String? error;
-
+  // EmployeeManagementController (){
+  //   loadEmployees();
+  // }
   Future<void> loadEmployees() async {
     loading = true;
     error = null;
@@ -39,35 +41,35 @@ class EmployeeManagementController extends ChangeNotifier {
     loading = true;
     error = null;
     notifyListeners();
-try {
-  print('🔄 Controller: Début création employé');
+    try {
+      print('🔄 Controller: Début création employé');
 
-  final success = await _service.createEmployee(
-    name: name,
-    email: email,
-    password: password,
-    contact: contact,
-    details: details,
-    startDate: startDate,
-    status: status,
-  );
+      final success = await _service.createEmployee(
+        name: name,
+        email: email,
+        password: password,
+        contact: contact,
+        details: details,
+        startDate: startDate,
+        status: status,
+      );
 
-  print('✅ Controller: Résultat service = $success');
+      print('✅ Controller: Résultat service = $success');
 
-  if (success) {
-    print('🔄 Controller: Rechargement des employés...');
-    await loadEmployees();
-    loading = false;
-    notifyListeners();
-  } else {
-    throw Exception('Le service a retourné false');
-  }
-} catch (e) {
-  print('💥 Controller: Erreur = $e');
-  error = 'Échec de la création de l\'employé : $e';
-  loading = false;
-  notifyListeners();
-}
+      if (success) {
+        print('🔄 Controller: Rechargement des employés...');
+        await loadEmployees();
+        loading = false;
+        notifyListeners();
+      } else {
+        throw Exception('Le service a retourné false');
+      }
+    } catch (e) {
+      print('💥 Controller: Erreur = $e');
+      error = 'Échec de la création de l\'employé : $e';
+      loading = false;
+      notifyListeners();
+    }
   }
 
   Future<void> updateEmployee({

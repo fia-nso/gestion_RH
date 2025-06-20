@@ -128,8 +128,8 @@
   "days": "days",
   "total_duration": "Total duration",
   "assignment_info_placeholder": "Assignment information will be displayed here",
-  "not_set": "Not set"
-
-
-
+  "not_set": "Not set",
+  "people_manager": "people manager",
+  "no_people_manager": "No People Manager assigned",
+  "required_field": "This field is required"
 }

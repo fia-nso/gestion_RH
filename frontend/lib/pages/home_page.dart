@@ -29,7 +29,7 @@ class HomePage extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(
             create: (_) => EmployerUpdateController(context)),
-        ChangeNotifierProvider(create: (_) => EmployeeManagementController()),
+        // ChangeNotifierProvider(create: (_) => EmployeeManagementController()),
         ChangeNotifierProvider(create: (_) => LeaveManagementController()),
       ],
       child: const _HomePageBody(),
@@ -2268,207 +2268,6 @@ class EmployeeDetails extends StatelessWidget {
   }
 }
 
-class EditProjectDialog extends StatefulWidget {
-  final Project project;
-  final ProjectManagementController controller;
-
-  const EditProjectDialog({
-    super.key,
-    required this.project,
-    required this.controller,
-  });
-
-  @override
-  State<EditProjectDialog> createState() => _EditProjectDialogState();
-}
-
-class _EditProjectDialogState extends State<EditProjectDialog> {
-  final _formKey = GlobalKey<FormState>();
-  late TextEditingController _nameController;
-  late TextEditingController _descriptionController;
-  late TextEditingController _sizeController;
-  late TextEditingController _scopeController;
-  DateTime? _startDate;
-  DateTime? _endDate;
-  ProjectStatus? _status;
-
-  @override
-  void initState() {
-    super.initState();
-    _nameController = TextEditingController(text: widget.project.name);
-    _descriptionController =
-        TextEditingController(text: widget.project.description);
-    _sizeController = TextEditingController(text: widget.project.size);
-    _scopeController = TextEditingController(text: widget.project.scope);
-    _startDate = widget.project.startDate;
-    _endDate = widget.project.endDate;
-    _status = widget.project.status;
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _descriptionController.dispose();
-    _sizeController.dispose();
-    _scopeController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _selectStartDate(BuildContext context) async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _startDate ?? DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
-      helpText: 'Sélectionner la date de début',
-    );
-    if (picked != null && picked != _startDate) {
-      setState(() => _startDate = picked);
-    }
-  }
-
-  Future<void> _selectEndDate(BuildContext context) async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _endDate ?? DateTime.now(),
-      firstDate: _startDate ?? DateTime(2000),
-      lastDate: DateTime(2100),
-      helpText: 'Sélectionner la date de fin',
-    );
-    if (picked != null && picked != _endDate) {
-      setState(() => _endDate = picked);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text('Modifier le projet'),
-      content: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: _nameController,
-                decoration: InputDecoration(labelText: 'Nom du projet'),
-                validator: (value) => value == null || value.trim().isEmpty
-                    ? 'Le nom du projet est requis'
-                    : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _descriptionController,
-                decoration: InputDecoration(labelText: 'Description'),
-                maxLines: 3,
-                validator: (value) => value == null || value.trim().isEmpty
-                    ? 'La description est requise'
-                    : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _sizeController,
-                decoration: InputDecoration(labelText: 'Taille'),
-                validator: (value) => value == null || value.trim().isEmpty
-                    ? 'La taille est requise'
-                    : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _scopeController,
-                decoration: InputDecoration(labelText: 'Portée'),
-                validator: (value) => value == null || value.trim().isEmpty
-                    ? 'La portée est requise'
-                    : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                readOnly: true,
-                decoration: InputDecoration(
-                  labelText: 'Date de début',
-                  hintText: _startDate == null
-                      ? 'Sélectionner la date'
-                      : DateFormat.yMMMd().format(_startDate!),
-                ),
-                onTap: () => _selectStartDate(context),
-                validator: (value) =>
-                    _startDate == null ? 'La date de début est requise' : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                readOnly: true,
-                decoration: InputDecoration(
-                  labelText: 'Date de fin (optionnelle)',
-                  hintText: _endDate == null
-                      ? 'Sélectionner la date'
-                      : DateFormat.yMMMd().format(_endDate!),
-                ),
-                onTap: () => _selectEndDate(context),
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<ProjectStatus>(
-                value: _status,
-                decoration: InputDecoration(labelText: 'Statut'),
-                items: ProjectStatus.values
-                    .map((status) => DropdownMenuItem(
-                        value: status, child: Text(status.value)))
-                    .toList(),
-                onChanged: (value) => setState(() => _status = value),
-                validator: (value) =>
-                    value == null ? 'Le statut est requis' : null,
-              ),
-            ],
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text('Annuler'),
-        ),
-        ElevatedButton(
-          onPressed: () async {
-            if (_formKey.currentState!.validate()) {
-              final success = await widget.controller.updateProject(
-                projectId: widget.project.id,
-                name: _nameController.text,
-                description: _descriptionController.text,
-                startDate: _startDate,
-                endDate: _endDate,
-                size: _sizeController.text,
-                scope: _scopeController.text,
-                status: _status,
-              );
-
-              if (context.mounted) {
-                if (success) {
-                  Navigator.of(context).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Projet mis à jour avec succès'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(widget.controller.error ??
-                          'Erreur lors de la mise à jour'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              }
-            }
-          },
-          child: Text('Mettre à jour'),
-        ),
-      ],
-    );
-  }
-}
-
 class ProjectManagementView extends StatefulWidget {
   const ProjectManagementView({super.key});
 
@@ -2488,8 +2287,13 @@ class _ProjectManagementViewState extends State<ProjectManagementView> {
     final userRole = authController.user.currentRole.id;
     final appLocalizations = AppLocalizations.of(context)!;
 
-    return ChangeNotifierProvider(
-      create: (_) => ProjectManagementController(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ProjectManagementController()),
+        ChangeNotifierProvider.value(
+            value: context.read<EmployeeManagementController>()
+              ..loadEmployees()),
+      ],
       child: Scaffold(
         body: Consumer<ProjectManagementController>(
           builder: (context, controller, child) {
@@ -2546,7 +2350,6 @@ class _ProjectManagementViewState extends State<ProjectManagementView> {
         ),
         floatingActionButton: Consumer<AuthController>(
           builder: (context, authController, child) {
-            // Only show create button for admins
             if (authController.user.currentRole.id == 'admin') {
               return FloatingActionButton(
                 onPressed: () => _showProjectDialog(context),
@@ -2763,7 +2566,7 @@ class _ProjectManagementViewState extends State<ProjectManagementView> {
   void _navigateToProjectDetails(BuildContext context, Project project) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => ProjectDetailsView(project: project),
+        builder: (context) => ProjectDetails(project: project),
       ),
     );
   }
@@ -2772,9 +2575,17 @@ class _ProjectManagementViewState extends State<ProjectManagementView> {
       ProjectManagementController controller) {
     showDialog(
       context: context,
-      builder: (context) => EditProjectDialog(
-        project: project,
-        controller: controller,
+      builder: (context) => MultiProvider(
+        providers: [
+          ChangeNotifierProvider.value(
+              value: context.read<EmployeeManagementController>()
+                ..loadEmployees()),
+          ChangeNotifierProvider(create: (_) => ProjectFormController(project)),
+        ],
+        child: EditProjectPage(
+          project: project,
+          controller: controller,
+        ),
       ),
     );
   }
@@ -2789,7 +2600,7 @@ class _ProjectManagementViewState extends State<ProjectManagementView> {
                 ..loadEmployees()),
           ChangeNotifierProvider(create: (_) => ProjectFormController(project)),
         ],
-        child: const ProjectFormDialog(),
+        child: const ProjectFormPage(),
       ),
     );
   }
@@ -2992,17 +2803,33 @@ class ProjectCard extends StatelessWidget {
 }
 
 // New ProjectDetailsView for detailed project information
-class ProjectDetailsView extends StatelessWidget {
+class ProjectDetails extends StatelessWidget {
   final Project project;
 
-  const ProjectDetailsView({super.key, required this.project});
+  const ProjectDetails({super.key, required this.project});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final appLocalizations = AppLocalizations.of(context)!;
+    final employeeController = context.watch<EmployeeManagementController>();
     final authController = context.watch<AuthController>();
     final userRole = authController.user.currentRole.id;
+
+    final peopleManagerAssignment = project.assignments?.firstWhere(
+      (assignment) => assignment['role'] == 'People Manager',
+      orElse: () => {},
+    );
+    final peopleManager = peopleManagerAssignment != null &&
+            peopleManagerAssignment['employer_id'] != null
+        ? employeeController.employees.firstWhere(
+            (e) => e.id == peopleManagerAssignment['employer_id'],
+            orElse: () => Employer(
+              id: peopleManagerAssignment['employer_id']!,
+              roles: [AppRole(id: 'employer')],
+            ),
+          )
+        : null;
 
     return Scaffold(
       appBar: AppBar(
@@ -3027,7 +2854,8 @@ class ProjectDetailsView extends StatelessWidget {
             const SizedBox(height: 24),
             _buildTimelineSection(context, theme, appLocalizations),
             const SizedBox(height: 24),
-            _buildAssignmentsSection(context, theme, appLocalizations),
+            _buildAssignmentsSection(context, theme, appLocalizations,
+                peopleManager ?? Employer(id: '', roles: [])),
           ],
         ),
       ),
@@ -3195,7 +3023,7 @@ class ProjectDetailsView extends StatelessWidget {
   }
 
   Widget _buildAssignmentsSection(BuildContext context, ThemeData theme,
-      AppLocalizations appLocalizations) {
+      AppLocalizations appLocalizations, Employer employe) {
     // This section would show assigned employees if that data is available
     return Card(
       child: Padding(
@@ -3221,10 +3049,12 @@ class ProjectDetailsView extends StatelessWidget {
                 children: [
                   Icon(Icons.info_outline, color: Colors.grey[600]),
                   const SizedBox(width: 8),
-                  Text(
-                    appLocalizations.assignment_info_placeholder ??
-                        'Assignment information will be displayed here',
-                    style: TextStyle(color: Colors.grey[600]),
+                  Expanded(
+                    child: Text(
+                      employe.name ??
+                          appLocalizations.assignment_info_placeholder,
+                      style: TextStyle(color: Colors.grey[600]),
+                    ),
                   ),
                 ],
               ),
@@ -3404,7 +3234,7 @@ class ProjectDetailsView extends StatelessWidget {
         create: (_) => ProjectManagementController(),
         child: Consumer<ProjectManagementController>(
           builder: (context, controller, child) {
-            return EditProjectDialog(
+            return EditProjectPage(
               project: project,
               controller: controller,
             );
@@ -3415,61 +3245,43 @@ class ProjectDetailsView extends StatelessWidget {
   }
 }
 
-class ProjectFormController extends ChangeNotifier {
-  final Project? project;
-  final _nameController = TextEditingController();
-  final _descriptionController = TextEditingController();
-  final _sizeController = TextEditingController();
-  final _scopeController = TextEditingController();
-  DateTime _startDate = DateTime.now();
+class EditProjectPage extends StatefulWidget {
+  final Project project;
+  final ProjectManagementController controller;
+
+  const EditProjectPage({
+    super.key,
+    required this.project,
+    required this.controller,
+  });
+
+  @override
+  State<EditProjectPage> createState() => _EditProjectPageState();
+}
+
+class _EditProjectPageState extends State<EditProjectPage> {
+  final _formKey = GlobalKey<FormState>();
+  late TextEditingController _nameController;
+  late TextEditingController _descriptionController;
+  late TextEditingController _sizeController;
+  late TextEditingController _scopeController;
+  DateTime? _startDate;
   DateTime? _endDate;
-  ProjectStatus _status = ProjectStatus.planning;
+  ProjectStatus? _status;
   List<Map<String, String>> _assignments = [];
 
-  ProjectFormController(this.project) {
-    if (project != null) {
-      _nameController.text = project!.name;
-      _descriptionController.text = project!.description;
-      _sizeController.text = project!.size;
-      _scopeController.text = project!.scope;
-      _startDate = project!.startDate;
-      _endDate = project!.endDate;
-      _status = project!.status;
-    }
-  }
-
-  TextEditingController get nameController => _nameController;
-  TextEditingController get descriptionController => _descriptionController;
-  TextEditingController get sizeController => _sizeController;
-  TextEditingController get scopeController => _scopeController;
-  DateTime get startDate => _startDate;
-  DateTime? get endDate => _endDate;
-  ProjectStatus get status => _status;
-  List<Map<String, String>> get assignments => _assignments;
-
-  void setStartDate(DateTime date) {
-    _startDate = date;
-    notifyListeners();
-  }
-
-  void setEndDate(DateTime? date) {
-    _endDate = date;
-    notifyListeners();
-  }
-
-  void setStatus(ProjectStatus status) {
-    _status = status;
-    notifyListeners();
-  }
-
-  void addAssignment(String employerId, String role) {
-    _assignments.add({'employer_id': employerId, 'role': role});
-    notifyListeners();
-  }
-
-  void removeAssignment(String employerId) {
-    _assignments.removeWhere((a) => a['employer_id'] == employerId);
-    notifyListeners();
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.project.name);
+    _descriptionController =
+        TextEditingController(text: widget.project.description);
+    _sizeController = TextEditingController(text: widget.project.size);
+    _scopeController = TextEditingController(text: widget.project.scope);
+    _startDate = widget.project.startDate;
+    _endDate = widget.project.endDate;
+    _status = widget.project.status;
+    _assignments = List.from(widget.project.assignments ?? []);
   }
 
   @override
@@ -3480,10 +3292,324 @@ class ProjectFormController extends ChangeNotifier {
     _scopeController.dispose();
     super.dispose();
   }
+
+  Future<void> _selectStartDate(BuildContext context) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _startDate ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+                  primary: Theme.of(context).colorScheme.primary,
+                  onPrimary: Theme.of(context).colorScheme.onPrimary,
+                  surface: Theme.of(context).colorScheme.surface,
+                  onSurface: Theme.of(context).colorScheme.onSurface,
+                ),
+            dialogBackgroundColor: Theme.of(context).colorScheme.surface,
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null && picked != _startDate) {
+      setState(() => _startDate = picked);
+    }
+  }
+
+  Future<void> _selectEndDate(BuildContext context) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _endDate ?? DateTime.now(),
+      firstDate: _startDate ?? DateTime(2000),
+      lastDate: DateTime(2100),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+                  primary: Theme.of(context).colorScheme.primary,
+                  onPrimary: Theme.of(context).colorScheme.onPrimary,
+                  surface: Theme.of(context).colorScheme.surface,
+                  onSurface: Theme.of(context).colorScheme.onSurface,
+                ),
+            dialogBackgroundColor: Theme.of(context).colorScheme.surface,
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null && picked != _endDate) {
+      setState(() => _endDate = picked);
+    }
+  }
+
+  // void _addAssignment(String employerId, ProjectRole role) {
+  //   if (role == ProjectRole.peopleManager &&
+  //       _assignments.any((a) => a['role'] == 'People Manager')) {
+  //     return; // Prevent adding multiple People Managers
+  //   }
+  //   setState(() {
+  //     _assignments.add({
+  //       'employer_id': employerId,
+  //       'role': role.value,
+  //     });
+  //   });
+  // }
+
+  // void _removeAssignment(String employerId) {
+  //   setState(() {
+  //     _assignments
+  //         .removeWhere((assignment) => assignment['employer_id'] == employerId);
+  //   });
+  // }
+
+  @override
+  Widget build(BuildContext context) {
+    final appLocalizations = AppLocalizations.of(context)!;
+    final formController = context.watch<ProjectFormController>();
+    final employeeController = context.watch<EmployeeManagementController>();
+    final theme = Theme.of(context);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          appLocalizations.edit_project,
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: theme.colorScheme.onPrimary,
+          ),
+        ),
+        backgroundColor: theme.colorScheme.primary,
+        elevation: 4,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Card(
+          elevation: 8,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Form(
+              key: _formKey,
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Project Name
+                    TextFormField(
+                      controller: _nameController,
+                      decoration: InputDecoration(
+                        labelText: appLocalizations.project_name,
+                        labelStyle: TextStyle(color: theme.colorScheme.primary),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        filled: true,
+                        fillColor: theme.colorScheme.surface.withOpacity(0.1),
+                        prefixIcon:
+                            Icon(Icons.title, color: theme.colorScheme.primary),
+                      ),
+                      validator: (value) => value!.trim().isEmpty
+                          ? appLocalizations.name_required
+                          : null,
+                    ),
+                    const SizedBox(height: 16),
+                    // Description
+                    TextFormField(
+                      controller: _descriptionController,
+                      decoration: InputDecoration(
+                        labelText: appLocalizations.description,
+                        labelStyle: TextStyle(color: theme.colorScheme.primary),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        filled: true,
+                        fillColor: theme.colorScheme.surface.withOpacity(0.1),
+                        prefixIcon: Icon(Icons.description,
+                            color: theme.colorScheme.primary),
+                      ),
+                      maxLines: 4,
+                      validator: (value) => value!.trim().isEmpty
+                          ? appLocalizations.description
+                          : null,
+                    ),
+                    const SizedBox(height: 16),
+                    // Project Size
+                    TextFormField(
+                      controller: _sizeController,
+                      decoration: InputDecoration(
+                        labelText: appLocalizations.project_size,
+                        labelStyle: TextStyle(color: theme.colorScheme.primary),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        filled: true,
+                        fillColor: theme.colorScheme.surface.withOpacity(0.1),
+                        prefixIcon:
+                            Icon(Icons.scale, color: theme.colorScheme.primary),
+                      ),
+                      validator: (value) => value!.trim().isEmpty
+                          ? appLocalizations.project_size
+                          : null,
+                    ),
+                    const SizedBox(height: 16),
+                    // Project Scope
+                    TextFormField(
+                      controller: _scopeController,
+                      decoration: InputDecoration(
+                        labelText: appLocalizations.project_scope,
+                        labelStyle: TextStyle(color: theme.colorScheme.primary),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        filled: true,
+                        fillColor: theme.colorScheme.surface.withOpacity(0.1),
+                        prefixIcon:
+                            Icon(Icons.score, color: theme.colorScheme.primary),
+                      ),
+                      validator: (value) => value!.trim().isEmpty
+                          ? appLocalizations.project_scope
+                          : null,
+                    ),
+                    const SizedBox(height: 16),
+                    // Start Date
+                    InkWell(
+                      onTap: () => _selectStartDate(context),
+                      child: InputDecorator(
+                        decoration: InputDecoration(
+                          labelText: appLocalizations.start_date,
+                          labelStyle:
+                              TextStyle(color: theme.colorScheme.primary),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          filled: true,
+                          fillColor: theme.colorScheme.surface.withOpacity(0.1),
+                          suffixIcon: Icon(Icons.calendar_today,
+                              color: theme.colorScheme.primary),
+                        ),
+                        child: Text(
+                          _startDate != null
+                              ? DateFormat.yMMMd().format(_startDate!)
+                              : appLocalizations.select_date,
+                          style: theme.textTheme.bodyLarge,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // End Date
+                    InkWell(
+                      onTap: () => _selectEndDate(context),
+                      child: InputDecorator(
+                        decoration: InputDecoration(
+                          labelText: appLocalizations.end_date_label,
+                          labelStyle:
+                              TextStyle(color: theme.colorScheme.primary),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          filled: true,
+                          fillColor: theme.colorScheme.surface.withOpacity(0.1),
+                          suffixIcon: Icon(Icons.calendar_today,
+                              color: theme.colorScheme.primary),
+                        ),
+                        child: Text(
+                          _endDate != null
+                              ? DateFormat.yMMMd().format(_endDate!)
+                              : appLocalizations.not_set,
+                          style: theme.textTheme.bodyLarge,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Status Dropdown
+                    DropdownButtonFormField<ProjectStatus>(
+                      value: _status,
+                      decoration: InputDecoration(
+                        labelText: appLocalizations.status,
+                        labelStyle: TextStyle(color: theme.colorScheme.primary),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        filled: true,
+                        fillColor: theme.colorScheme.surface.withOpacity(0.1),
+                        prefixIcon: Icon(Icons.stairs,
+                            color: theme.colorScheme.primary),
+                      ),
+                      items: ProjectStatus.values
+                          .map((status) => DropdownMenuItem(
+                                value: status,
+                                child: Text(status.value),
+                              ))
+                          .toList(),
+                      onChanged: (value) => setState(() => _status = value),
+                      validator: (value) => value == null
+                          ? appLocalizations.status_required
+                          : null,
+                    ),
+                    const SizedBox(height: 24),
+                    // Employer Assignments Section
+                    _buildEmployerAssignmentSection(
+                        context, formController, employeeController),
+                    const SizedBox(height: 24),
+                    // Action Buttons
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        OutlinedButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: theme.colorScheme.primary),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 12),
+                          ),
+                          child: Text(
+                            appLocalizations.cancel,
+                            style: TextStyle(color: theme.colorScheme.primary),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        ElevatedButton(
+                          onPressed: () =>
+                              _saveProject(context, formController, _formKey),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: theme.colorScheme.primary,
+                            foregroundColor: theme.colorScheme.onPrimary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 12),
+                            elevation: 2,
+                          ),
+                          child: Text(appLocalizations.update),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
-class ProjectFormDialog extends StatelessWidget {
-  const ProjectFormDialog({super.key});
+class ProjectFormPage extends StatelessWidget {
+  const ProjectFormPage({super.key});
 
   static final _formKey = GlobalKey<FormState>();
 
@@ -3492,259 +3618,280 @@ class ProjectFormDialog extends StatelessWidget {
     final appLocalizations = AppLocalizations.of(context)!;
     final formController = context.watch<ProjectFormController>();
     final employeeController = context.watch<EmployeeManagementController>();
+    final theme = Theme.of(context);
 
-    return AlertDialog(
-      title: Text(formController.project == null
-          ? appLocalizations.create_project
-          : appLocalizations.edit_project),
-      content: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: formController.nameController,
-                decoration: InputDecoration(
-                  labelText: appLocalizations.project_name,
-                  border: const OutlineInputBorder(),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          formController.project == null
+              ? appLocalizations.create_project
+              : appLocalizations.edit_project,
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: theme.colorScheme.onPrimary,
+          ),
+        ),
+        backgroundColor: theme.colorScheme.primary,
+        elevation: 4,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Card(
+          elevation: 8,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Form(
+              key: _formKey,
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Project Name
+                    TextFormField(
+                      controller: formController.nameController,
+                      decoration: InputDecoration(
+                        labelText: appLocalizations.project_name,
+                        labelStyle: TextStyle(color: theme.colorScheme.primary),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        filled: true,
+                        fillColor: theme.colorScheme.surface.withOpacity(0.1),
+                        prefixIcon:
+                            Icon(Icons.title, color: theme.colorScheme.primary),
+                      ),
+                      validator: (value) => value!.trim().isEmpty
+                          ? appLocalizations.name_required
+                          : null,
+                    ),
+                    const SizedBox(height: 16),
+                    // Description
+                    TextFormField(
+                      controller: formController.descriptionController,
+                      decoration: InputDecoration(
+                        labelText: appLocalizations.description,
+                        labelStyle: TextStyle(color: theme.colorScheme.primary),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        filled: true,
+                        fillColor: theme.colorScheme.surface.withOpacity(0.1),
+                        prefixIcon: Icon(Icons.description,
+                            color: theme.colorScheme.primary),
+                      ),
+                      maxLines: 4,
+                      validator: (value) => value!.trim().isEmpty
+                          ? appLocalizations.description
+                          : null,
+                    ),
+                    const SizedBox(height: 16),
+                    // Project Size
+                    TextFormField(
+                      controller: formController.sizeController,
+                      decoration: InputDecoration(
+                        labelText: appLocalizations.project_size,
+                        labelStyle: TextStyle(color: theme.colorScheme.primary),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        filled: true,
+                        fillColor: theme.colorScheme.surface.withOpacity(0.1),
+                        prefixIcon:
+                            Icon(Icons.scale, color: theme.colorScheme.primary),
+                      ),
+                      validator: (value) => value!.trim().isEmpty
+                          ? appLocalizations.project_size
+                          : null,
+                    ),
+                    const SizedBox(height: 16),
+                    // Project Scope
+                    TextFormField(
+                      controller: formController.scopeController,
+                      decoration: InputDecoration(
+                        labelText: appLocalizations.project_scope,
+                        labelStyle: TextStyle(color: theme.colorScheme.primary),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        filled: true,
+                        fillColor: theme.colorScheme.surface.withOpacity(0.1),
+                        prefixIcon:
+                            Icon(Icons.score, color: theme.colorScheme.primary),
+                      ),
+                      validator: (value) => value!.trim().isEmpty
+                          ? appLocalizations.project_scope
+                          : null,
+                    ),
+                    const SizedBox(height: 16),
+                    // Start Date
+                    InkWell(
+                      onTap: () => _selectDate(context, formController, true),
+                      child: InputDecorator(
+                        decoration: InputDecoration(
+                          labelText: appLocalizations.start_date,
+                          labelStyle:
+                              TextStyle(color: theme.colorScheme.primary),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          filled: true,
+                          fillColor: theme.colorScheme.surface.withOpacity(0.1),
+                          suffixIcon: Icon(Icons.calendar_today,
+                              color: theme.colorScheme.primary),
+                        ),
+                        child: Text(
+                          DateFormat.yMMMd().format(formController.startDate),
+                          style: theme.textTheme.bodyLarge,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // End Date
+                    InkWell(
+                      onTap: () => _selectDate(context, formController, false),
+                      child: InputDecorator(
+                        decoration: InputDecoration(
+                          labelText: appLocalizations.end_date_label,
+                          labelStyle:
+                              TextStyle(color: theme.colorScheme.primary),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          filled: true,
+                          fillColor: theme.colorScheme.surface.withOpacity(0.1),
+                          suffixIcon: Icon(Icons.calendar_today,
+                              color: theme.colorScheme.primary),
+                        ),
+                        child: Text(
+                          formController.endDate == null
+                              ? appLocalizations.not_set
+                              : DateFormat.yMMMd()
+                                  .format(formController.endDate!),
+                          style: theme.textTheme.bodyLarge,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Status Dropdown
+                    DropdownButtonFormField<ProjectStatus>(
+                      value: formController.status,
+                      decoration: InputDecoration(
+                        labelText: appLocalizations.status,
+                        labelStyle: TextStyle(color: theme.colorScheme.primary),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        filled: true,
+                        fillColor: theme.colorScheme.surface.withOpacity(0.1),
+                        prefixIcon: Icon(Icons.stairs,
+                            color: theme.colorScheme.primary),
+                      ),
+                      items: ProjectStatus.values
+                          .map((status) => DropdownMenuItem(
+                                value: status,
+                                child: Text(status.value),
+                              ))
+                          .toList(),
+                      onChanged: (value) => formController.setStatus(value!),
+                    ),
+                    const SizedBox(height: 24),
+                    // Employer Assignments Section
+                    _buildEmployerAssignmentSection(
+                      context,
+                      formController,
+                      employeeController,
+                    ),
+                    const SizedBox(height: 24),
+                    // Action Buttons
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        OutlinedButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: theme.colorScheme.primary),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 12),
+                          ),
+                          child: Text(
+                            appLocalizations.cancel,
+                            style: TextStyle(color: theme.colorScheme.primary),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        ElevatedButton(
+                          onPressed: () =>
+                              _saveProject(context, formController, _formKey),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: theme.colorScheme.primary,
+                            foregroundColor: theme.colorScheme.onPrimary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 12),
+                            elevation: 2,
+                          ),
+                          child: Text(
+                            formController.project == null
+                                ? appLocalizations.create
+                                : appLocalizations.update,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-                validator: (value) => value!.trim().isEmpty
-                    ? appLocalizations.name_required
-                    : null,
               ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: formController.descriptionController,
-                decoration: InputDecoration(
-                  labelText: appLocalizations.description,
-                  border: const OutlineInputBorder(),
-                ),
-                maxLines: 3,
-                validator: (value) =>
-                    value!.trim().isEmpty ? appLocalizations.description : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: formController.sizeController,
-                decoration: InputDecoration(
-                  labelText: appLocalizations.project_size,
-                  border: const OutlineInputBorder(),
-                ),
-                validator: (value) => value!.trim().isEmpty
-                    ? appLocalizations.project_size
-                    : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: formController.scopeController,
-                decoration: InputDecoration(
-                  labelText: appLocalizations.project_scope,
-                  border: const OutlineInputBorder(),
-                ),
-                validator: (value) => value!.trim().isEmpty
-                    ? appLocalizations.project_scope
-                    : null,
-              ),
-              const SizedBox(height: 16),
-              InkWell(
-                onTap: () => _selectDate(context, formController, true),
-                child: InputDecorator(
-                  decoration: InputDecoration(
-                    labelText: appLocalizations.start_date,
-                    border: const OutlineInputBorder(),
-                    suffixIcon: const Icon(Icons.calendar_today),
-                  ),
-                  child: Text(
-                    DateFormat.yMMMd().format(formController.startDate),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              InkWell(
-                onTap: () => _selectDate(context, formController, false),
-                child: InputDecorator(
-                  decoration: InputDecoration(
-                    labelText: appLocalizations.end_date_label,
-                    border: const OutlineInputBorder(),
-                    suffixIcon: const Icon(Icons.calendar_today),
-                  ),
-                  child: Text(formController.endDate == null
-                      ? appLocalizations.not_set
-                      : DateFormat.yMMMd().format(formController.endDate!)),
-                ),
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<ProjectStatus>(
-                value: formController.status,
-                decoration: InputDecoration(
-                  labelText: appLocalizations.status,
-                  border: const OutlineInputBorder(),
-                ),
-                items: ProjectStatus.values
-                    .map((status) => DropdownMenuItem(
-                          value: status,
-                          child: Text(status.value),
-                        ))
-                    .toList(),
-                onChanged: (value) => formController.setStatus(value!),
-              ),
-              const SizedBox(height: 16),
-              _buildEmployerAssignmentSection(
-                context,
-                formController,
-                employeeController,
-              ),
-            ],
+            ),
           ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(appLocalizations.cancel),
-        ),
-        ElevatedButton(
-          onPressed: () => _saveProject(context, formController, _formKey),
-          child: Text(formController.project == null
-              ? appLocalizations.create
-              : appLocalizations.update),
-        ),
-      ],
     );
   }
-}
 
-Widget _buildEmployerAssignmentSection(
-    BuildContext context,
-    ProjectFormController formController,
-    EmployeeManagementController employeeController) {
-  final appLocalizations = AppLocalizations.of(context)!;
-
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        appLocalizations.assigned_employers,
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-      ),
-      const SizedBox(height: 8),
-      if (formController.assignments.isNotEmpty)
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: formController.assignments.map((assignment) {
-            final employer = employeeController.employees.firstWhere(
-              (e) => e.id == assignment['employer_id'],
-              orElse: () => Employer(
-                id: assignment['employer_id']!,
-                roles: [AppRole(id: 'employer')],
-              ),
-            );
-            return Chip(
-              label: Text(employer.name ?? employer.id),
-              deleteIcon: const Icon(Icons.close, size: 18),
-              onDeleted: () =>
-                  formController.removeAssignment(assignment['employer_id']!),
-            );
-          }).toList(),
-        ),
-      const SizedBox(height: 8),
-      ElevatedButton.icon(
-        onPressed: () => _showEmployerSelectionDialog(
-            context, formController, employeeController),
-        icon: const Icon(Icons.person_add),
-        label: Text(appLocalizations.add_employer),
-      ),
-    ],
-  );
-}
-
-Future<void> _selectDate(BuildContext context, ProjectFormController controller,
-    bool isStartDate) async {
-  final initialDate =
-      isStartDate ? controller.startDate : controller.endDate ?? DateTime.now();
-  final date = await showDatePicker(
-    context: context,
-    initialDate: initialDate,
-    firstDate: DateTime.now().subtract(const Duration(days: 365)),
-    lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
-  );
-  if (date != null) {
-    if (isStartDate) {
-      controller.setStartDate(date);
-    } else {
-      controller.setEndDate(date);
+  Future<void> _selectDate(BuildContext context,
+      ProjectFormController formController, bool isStartDate) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: isStartDate
+          ? formController.startDate
+          : (formController.endDate ?? DateTime.now()),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+                  primary: Theme.of(context).colorScheme.primary,
+                  onPrimary: Theme.of(context).colorScheme.onPrimary,
+                  surface: Theme.of(context).colorScheme.surface,
+                  onSurface: Theme.of(context).colorScheme.onSurface,
+                ),
+            dialogBackgroundColor: Theme.of(context).colorScheme.surface,
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      if (isStartDate) {
+        formController.setStartDate(picked);
+      } else {
+        formController.setEndDate(picked);
+      }
     }
   }
-}
-
-void _showEmployerSelectionDialog(
-    BuildContext context,
-    ProjectFormController formController,
-    EmployeeManagementController employeeController) {
-  showDialog(
-    context: context,
-    builder: (context) {
-      final roleController = TextEditingController();
-      Employer? selectedEmployer;
-
-      return AlertDialog(
-        title: Text(AppLocalizations.of(context)!.select_employer),
-        content: StatefulBuilder(
-          builder: (context, setState) {
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                DropdownButtonFormField<Employer>(
-                  decoration: const InputDecoration(
-                    labelText: 'Employer',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: employeeController.employees
-                      .where((e) => !formController.assignments
-                          .any((a) => a['employer_id'] == e.id))
-                      .map((employer) => DropdownMenuItem(
-                            value: employer,
-                            child: Text(employer.name ?? employer.id),
-                          ))
-                      .toList(),
-                  onChanged: (value) =>
-                      setState(() => selectedEmployer = value),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: roleController,
-                  decoration: const InputDecoration(
-                    labelText: 'Role (Optional)',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(AppLocalizations.of(context)!.cancel),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (selectedEmployer != null) {
-                formController.addAssignment(
-                    selectedEmployer!.id, roleController.text.trim());
-                Navigator.of(context).pop();
-              }
-            },
-            child: Text(AppLocalizations.of(context)!.add),
-          ),
-        ],
-      );
-    },
-  );
 }
 
 Future<void> _saveProject(BuildContext context,
@@ -3787,5 +3934,223 @@ Future<void> _saveProject(BuildContext context,
         ),
       );
     }
+  }
+}
+
+void _showEmployerSelectionDialog(
+  BuildContext context,
+  ProjectFormController formController,
+  EmployeeManagementController employeeController,
+) {
+  showDialog(
+    context: context,
+    builder: (context) {
+      final appLocalizations = AppLocalizations.of(context)!;
+      final theme = Theme.of(context);
+      final hasPeopleManager =
+          formController.assignments.any((a) => a['role'] == 'People Manager');
+
+      return AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: Text(
+          appLocalizations.select_employer,
+          style:
+              theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: employeeController.employees
+                .where((e) => !formController.assignments
+                    .any((a) => a['employer_id'] == e.id))
+                .map((employer) => Card(
+                      margin: const EdgeInsets.symmetric(vertical: 4),
+                      elevation: 2,
+                      child: ListTile(
+                        title: Text(
+                          employer.name ?? employer.id,
+                          style: theme.textTheme.bodyLarge,
+                        ),
+                        onTap: () async {
+                          final role = await showDialog<ProjectRole>(
+                            context: context,
+                            builder: (context) => SimpleDialog(
+                              title: Text('select_role'),
+                              children: ProjectRole.values
+                                  .where((role) =>
+                                      !hasPeopleManager ||
+                                      role != ProjectRole.peopleManager)
+                                  .map((role) => SimpleDialogOption(
+                                        onPressed: () =>
+                                            Navigator.pop(context, role),
+                                        child: Text(role.value),
+                                      ))
+                                  .toList(),
+                            ),
+                          );
+                          if (role != null) {
+                            formController.addAssignment(employer.id, role);
+                            Navigator.of(context).pop(); // close main dialog
+                          }
+                        },
+                      ),
+                    ))
+                .toList(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(appLocalizations.cancel,
+                style: TextStyle(color: theme.colorScheme.primary)),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+Widget _buildEmployerAssignmentSection(
+    BuildContext context,
+    ProjectFormController formController,
+    EmployeeManagementController employeeController) {
+  final appLocalizations = AppLocalizations.of(context)!;
+  final theme = Theme.of(context);
+
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        appLocalizations.assigned_employers,
+        style: theme.textTheme.titleMedium?.copyWith(
+          fontWeight: FontWeight.bold,
+          color: theme.colorScheme.primary,
+        ),
+      ),
+      const SizedBox(height: 12),
+      if (formController.assignments.isNotEmpty)
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: formController.assignments.map((assignment) {
+            final employer = employeeController.employees.firstWhere(
+              (e) => e.id == assignment['employer_id'],
+              orElse: () => Employer(
+                id: assignment['employer_id']!,
+                roles: [AppRole(id: 'employer')],
+              ),
+            );
+            return Chip(
+              label: Text(
+                '${employer.name ?? employer.id} (${assignment['role']})',
+                style: theme.textTheme.bodyMedium,
+              ),
+              deleteIcon: const Icon(Icons.close, size: 18),
+              onDeleted: () =>
+                  formController.removeAssignment(assignment['employer_id']!),
+              backgroundColor: assignment['role'] == 'People Manager'
+                  ? theme.colorScheme.primary.withOpacity(0.1)
+                  : theme.colorScheme.surface,
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
+            );
+          }).toList(),
+        )
+      else
+        Text(
+          'no_employers_assigned',
+          style: theme.textTheme.bodyMedium
+              ?.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.6)),
+        ),
+      const SizedBox(height: 12),
+      ElevatedButton.icon(
+        onPressed: () => _showEmployerSelectionDialog(
+            context, formController, employeeController),
+        icon: const Icon(Icons.person_add),
+        label: Text(appLocalizations.add_employer),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: theme.colorScheme.secondary,
+          foregroundColor: theme.colorScheme.onSecondary,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          elevation: 2,
+        ),
+      ),
+    ],
+  );
+}
+
+class ProjectFormController extends ChangeNotifier {
+  final Project? project;
+  final _nameController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _sizeController = TextEditingController();
+  final _scopeController = TextEditingController();
+  DateTime _startDate = DateTime.now();
+  DateTime? _endDate;
+  ProjectStatus _status = ProjectStatus.planning;
+  ProjectRole _role = ProjectRole.worker;
+  List<Map<String, String>> _assignments = [];
+
+  ProjectFormController(this.project) {
+    if (project != null) {
+      _nameController.text = project!.name;
+      _descriptionController.text = project!.description;
+      _sizeController.text = project!.size;
+      _scopeController.text = project!.scope;
+      _startDate = project!.startDate;
+      _endDate = project!.endDate;
+      _status = project!.status;
+    }
+  }
+
+  TextEditingController get nameController => _nameController;
+  TextEditingController get descriptionController => _descriptionController;
+  TextEditingController get sizeController => _sizeController;
+  TextEditingController get scopeController => _scopeController;
+  DateTime get startDate => _startDate;
+  DateTime? get endDate => _endDate;
+  ProjectStatus get status => _status;
+  ProjectRole get role => _role;
+  List<Map<String, String>> get assignments => _assignments;
+
+  void setStartDate(DateTime date) {
+    _startDate = date;
+    notifyListeners();
+  }
+
+  void setEndDate(DateTime? date) {
+    _endDate = date;
+    notifyListeners();
+  }
+
+  void setStatus(ProjectStatus status) {
+    _status = status;
+    notifyListeners();
+  }
+
+  void setRole(ProjectRole role) {
+    _role = role;
+    notifyListeners();
+  }
+
+  void addAssignment(String employerId, ProjectRole role) {
+    _assignments.add({'employer_id': employerId, 'role': role.value});
+    notifyListeners();
+  }
+
+  void removeAssignment(String employerId) {
+    _assignments.removeWhere((a) => a['employer_id'] == employerId);
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descriptionController.dispose();
+    _sizeController.dispose();
+    _scopeController.dispose();
+    super.dispose();
   }
 }

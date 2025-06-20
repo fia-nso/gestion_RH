@@ -844,6 +844,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Assignment information will be displayed here'**
   String get assignment_info_placeholder;
+
+  /// No description provided for @people_manager.
+  ///
+  /// In en, this message translates to:
+  /// **'people manager'**
+  String get people_manager;
+
+  /// No description provided for @no_people_manager.
+  ///
+  /// In en, this message translates to:
+  /// **'No People Manager assigned'**
+  String get no_people_manager;
+
+  /// No description provided for @required_field.
+  ///
+  /// In en, this message translates to:
+  /// **'This field is required'**
+  String get required_field;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

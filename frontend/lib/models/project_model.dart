@@ -1,4 +1,3 @@
-// import 'package:flutter/foundation.dart';
 import 'package:frontend/models/auth_model.dart';
 
 enum ProjectStatus {
@@ -18,11 +17,26 @@ enum ProjectStatus {
   }
 }
 
+enum ProjectRole {
+  peopleManager('People Manager'),
+  worker('Worker');
+
+  final String value;
+  const ProjectRole(this.value);
+
+  static ProjectRole fromString(String value) {
+    return ProjectRole.values.firstWhere(
+      (role) => role.value == value,
+      orElse: () => ProjectRole.worker,
+    );
+  }
+}
+
 class ProjectEmployees {
   final String id;
   final String projectId;
   final String employerId;
-  final String? role;
+  final ProjectRole? role;
   final DateTime assignedAt;
   final Employer? employer;
 
@@ -40,10 +54,9 @@ class ProjectEmployees {
       id: map['id'] as String,
       projectId: map['project_id'] as String,
       employerId: map['employer_id'] as String,
-      role: map['role'] as String?,
+      role: map['role'] != null ? ProjectRole.fromString(map['role'] as String) : null,
       assignedAt: DateTime.parse(map['assigned_at'] as String),
-      employer:
-          map['employer'] != null ? Employer.fromMap(map['employer']) : null,
+      employer: map['employer'] != null ? Employer.fromMap(map['employer']) : null,
     );
   }
 
@@ -52,7 +65,7 @@ class ProjectEmployees {
       'id': id,
       'project_id': projectId,
       'employer_id': employerId,
-      'role': role,
+      'role': role?.value,
       'assigned_at': assignedAt.toIso8601String(),
     };
   }
@@ -69,6 +82,7 @@ class Project {
   final ProjectStatus status;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final List<Map<String, String>>? assignments;
 
   Project({
     required this.id,
@@ -81,6 +95,7 @@ class Project {
     required this.status,
     required this.createdAt,
     required this.updatedAt,
+    this.assignments,
   });
 
   factory Project.fromMap(Map<String, dynamic> map) {
@@ -97,6 +112,11 @@ class Project {
       status: ProjectStatus.fromString(map['status'] as String),
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
+      assignments: map['employer_assignments'] != null
+          ? (map['employer_assignments'] as List<dynamic>)
+              .map((assignment) => Map<String, String>.from(assignment))
+              .toList()
+          : null,
     );
   }
 
@@ -112,6 +132,7 @@ class Project {
       'status': status.value,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
+      'employer_assignments': assignments,
     };
   }
 
@@ -124,6 +145,7 @@ class Project {
     String? scope,
     ProjectStatus? status,
     DateTime? updatedAt,
+    List<Map<String, String>>? assignments,
   }) {
     return Project(
       id: id,
@@ -136,6 +158,7 @@ class Project {
       status: status ?? this.status,
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      assignments: assignments ?? this.assignments,
     );
   }
 }
