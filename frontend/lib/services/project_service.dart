@@ -131,7 +131,9 @@ class ProjectService {
     try {
       print('Fetching all projects...');
 
-      final response = await client.from('projects').select('*');
+      final response = await client
+          .from('projects')
+          .select('*,employer_assignments:project_employees(*,employer(*))');
 
       print('Raw Supabase response: $response');
 

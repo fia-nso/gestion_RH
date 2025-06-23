@@ -53,10 +53,13 @@ class ProjectEmployees {
     return ProjectEmployees(
       id: map['id'] as String,
       projectId: map['project_id'] as String,
-      employerId: map['employer_id'] as String,
-      role: map['role'] != null ? ProjectRole.fromString(map['role'] as String) : null,
+      employerId: map['employee_id'] as String,
+      role: map['role'] != null
+          ? ProjectRole.fromString(map['role'] as String)
+          : null,
       assignedAt: DateTime.parse(map['assigned_at'] as String),
-      employer: map['employer'] != null ? Employer.fromMap(map['employer']) : null,
+      employer:
+          map['employer'] != null ? Employer.fromMap(map['employer']) : null,
     );
   }
 
@@ -82,7 +85,7 @@ class Project {
   final ProjectStatus status;
   final DateTime createdAt;
   final DateTime updatedAt;
-  final List<Map<String, String>>? assignments;
+  final List<ProjectEmployees>? assignments;
 
   Project({
     required this.id,
@@ -99,6 +102,14 @@ class Project {
   });
 
   factory Project.fromMap(Map<String, dynamic> map) {
+    final assignments = map['employer_assignments'] != null
+        ? List<Map<String, dynamic>>.from(map['employer_assignments'])
+            .map((assignment) {
+            final e = ProjectEmployees.fromMap(assignment);
+            return e;
+          }).toList()
+        : null;
+
     return Project(
       id: map['id'],
       name: map['name'],
@@ -112,11 +123,7 @@ class Project {
       status: ProjectStatus.fromString(map['status'] as String),
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
-      assignments: map['employer_assignments'] != null
-          ? (map['employer_assignments'] as List<dynamic>)
-              .map((assignment) => Map<String, String>.from(assignment))
-              .toList()
-          : null,
+      assignments: assignments,
     );
   }
 
@@ -145,7 +152,7 @@ class Project {
     String? scope,
     ProjectStatus? status,
     DateTime? updatedAt,
-    List<Map<String, String>>? assignments,
+    List<ProjectEmployees>? assignments,
   }) {
     return Project(
       id: id,

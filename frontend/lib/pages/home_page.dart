@@ -2327,22 +2327,26 @@ class _ProjectManagementViewState extends State<ProjectManagementView> {
                 Expanded(
                   child: filteredProjects.isEmpty
                       ? _buildEmptyState(context, appLocalizations)
-                      : ListView.builder(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: filteredProjects.length,
-                          itemBuilder: (context, index) {
-                            final project = filteredProjects[index];
-                            return ProjectCard(
-                              project: project,
-                              onTap: () =>
-                                  _navigateToProjectDetails(context, project),
-                              onEdit: userRole == 'admin'
-                                  ? () => _showEditProjectDialog(
-                                      context, project, controller)
-                                  : null,
-                            );
+                      : RefreshIndicator(
+                          onRefresh: () async {
+                            await controller.loadProjects();
                           },
-                        ),
+                          child: ListView.builder(
+                            padding: const EdgeInsets.all(16),
+                            itemCount: filteredProjects.length,
+                            itemBuilder: (context, index) {
+                              final project = filteredProjects[index];
+                              return ProjectCard(
+                                project: project,
+                                onTap: () =>
+                                    _navigateToProjectDetails(context, project),
+                                onEdit: userRole == 'admin'
+                                    ? () => _showEditProjectDialog(
+                                        context, project, controller)
+                                    : null,
+                              );
+                            },
+                          )),
                 ),
               ],
             );
@@ -2812,24 +2816,10 @@ class ProjectDetails extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final appLocalizations = AppLocalizations.of(context)!;
-    final employeeController = context.watch<EmployeeManagementController>();
     final authController = context.watch<AuthController>();
     final userRole = authController.user.currentRole.id;
 
-    final peopleManagerAssignment = project.assignments?.firstWhere(
-      (assignment) => assignment['role'] == 'People Manager',
-      orElse: () => {},
-    );
-    final peopleManager = peopleManagerAssignment != null &&
-            peopleManagerAssignment['employer_id'] != null
-        ? employeeController.employees.firstWhere(
-            (e) => e.id == peopleManagerAssignment['employer_id'],
-            orElse: () => Employer(
-              id: peopleManagerAssignment['employer_id']!,
-              roles: [AppRole(id: 'employer')],
-            ),
-          )
-        : null;
+    print('ProjectDetails: ${project.assignments}');
 
     return Scaffold(
       appBar: AppBar(
@@ -2854,8 +2844,12 @@ class ProjectDetails extends StatelessWidget {
             const SizedBox(height: 24),
             _buildTimelineSection(context, theme, appLocalizations),
             const SizedBox(height: 24),
-            _buildAssignmentsSection(context, theme, appLocalizations,
-                peopleManager ?? Employer(id: '', roles: [])),
+            _buildAssignmentsSection(
+              context,
+              theme,
+              appLocalizations,
+              project.assignments ?? [],
+            ),
           ],
         ),
       ),
@@ -3022,8 +3016,13 @@ class ProjectDetails extends StatelessWidget {
     );
   }
 
-  Widget _buildAssignmentsSection(BuildContext context, ThemeData theme,
-      AppLocalizations appLocalizations, Employer employe) {
+  Widget _buildAssignmentsSection(
+    BuildContext context,
+    ThemeData theme,
+    AppLocalizations appLocalizations,
+    List<ProjectEmployees> employes,
+  ) {
+    print('employes: $employes');
     // This section would show assigned employees if that data is available
     return Card(
       child: Padding(
@@ -3045,17 +3044,22 @@ class ProjectDetails extends StatelessWidget {
                 color: Colors.grey[100],
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Row(
+              child: Column(
                 children: [
-                  Icon(Icons.info_outline, color: Colors.grey[600]),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      employe.name ??
-                          appLocalizations.assignment_info_placeholder,
-                      style: TextStyle(color: Colors.grey[600]),
-                    ),
-                  ),
+                  for (final employe in employes)
+                    Row(
+                      children: [
+                        Icon(Icons.info_outline, color: Colors.grey[600]),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            employe.role?.name ??
+                                appLocalizations.assignment_info_placeholder,
+                            style: TextStyle(color: Colors.grey[600]),
+                          ),
+                        ),
+                      ],
+                    )
                 ],
               ),
             ),

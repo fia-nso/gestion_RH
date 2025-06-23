@@ -31,6 +31,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => EmployeeManagementController()),
         ChangeNotifierProvider(create: (_) => LeaveManagementController()),
         ChangeNotifierProvider(create: (_) => ProjectManagementController()),
+        ChangeNotifierProvider(create: (_) => ProjectFormController(null)),
       ],
       child: const MyApp(),
     ),
