@@ -43,8 +43,8 @@ class ProjectService {
       final projectData = {
         'name': name.trim(),
         'description': description.trim(),
-        'start_date': startDate.toIso8601String(),
-        'end_date': endDate?.toIso8601String(),
+        'startDate': startDate.toIso8601String(),
+        'endDate': endDate?.toIso8601String(),
         'size': size.trim(),
         'scope': scope.trim(),
         'status': status.value,
