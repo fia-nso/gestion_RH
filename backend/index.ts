@@ -1002,22 +1002,17 @@ app.group("/projects", (app) =>
           .from("projects")
           .select(
             `
-            *,
-            employer:employer_id(id, contact, details, photo, start_date),
-            creator:created_by(id, name, email, status),
-            assignee:assigned_to(id, name, email, status),
-            project_employees(
-              id,
-              role,
-              assigned_at,
-              employee:employee_id(id, contact, details, photo, start_date)
-            ),
-            project_absences(
-              id,
-              impact_level,
-              absence:absence_id(id, employee_id, absence_type, date, duration_minutes, reason, status)
-            )
-          `
+           *,
+        project_employees(
+          id,
+          role,
+          assigned_at,
+          employer(id, contact, details, photo, start_date
+          ,users(id,email,name)
+          )
+        )
+        
+      `
           )
           .eq("id", params.id)
           .single();
@@ -1044,8 +1039,6 @@ app.group("/projects", (app) =>
       }
     })
 
-
-
     .post(
       "/",
       async ({ body, set, request }) => {
@@ -1066,7 +1059,7 @@ app.group("/projects", (app) =>
           size,
           scope,
           status,
-          employer_assignments // Champ pour les assignations d'employés avec rôles
+          employer_assignments, // Champ pour les assignations d'employés avec rôles
         } = body;
 
         // Debug: Log des données reçues
@@ -1119,21 +1112,30 @@ app.group("/projects", (app) =>
 
           // Si des employés sont assignés, les ajouter à la table project_employees
           if (employer_assignments && employer_assignments.length > 0) {
-            console.log("Creating project-employee assignments for project:", projectData.id);
+            console.log(
+              "Creating project-employee assignments for project:",
+              projectData.id
+            );
 
-            const projectEmployeesData = employer_assignments.map((assignment: any) => ({
-              project_id: projectData.id,
-              employee_id: assignment.employer_id,
-              assigned_at: new Date().toISOString(),
-              role: assignment.role || "member"
-            }));
+            const projectEmployeesData = employer_assignments.map(
+              (assignment: any) => ({
+                project_id: projectData.id,
+                employee_id: assignment.employer_id,
+                assigned_at: new Date().toISOString(),
+                role: assignment.role || "member",
+              })
+            );
 
-            console.log("Project employees data to insert:", projectEmployeesData);
+            console.log(
+              "Project employees data to insert:",
+              projectEmployeesData
+            );
 
-            const { data: assignmentData, error: assignmentError } = await supabase
-              .from("project_employees")
-              .insert(projectEmployeesData)
-              .select();
+            const { data: assignmentData, error: assignmentError } =
+              await supabase
+                .from("project_employees")
+                .insert(projectEmployeesData)
+                .select();
 
             if (assignmentError) {
               console.error("Assignment error:", assignmentError);
@@ -1142,7 +1144,8 @@ app.group("/projects", (app) =>
               return {
                 success: true,
                 data: projectData,
-                message: "Project created successfully but employee assignment failed",
+                message:
+                  "Project created successfully but employee assignment failed",
                 warning: assignmentError.message,
               };
             }
@@ -1151,9 +1154,11 @@ app.group("/projects", (app) =>
           }
 
           // Récupérer le projet avec les employés assignés pour la réponse
-          const { data: completeProjectData, error: fetchError } = await supabase
-            .from("projects")
-            .select(`
+          const { data: completeProjectData, error: fetchError } =
+            await supabase
+              .from("projects")
+              .select(
+                `
               *,
               project_employees (
                 employee_id,
@@ -1164,9 +1169,10 @@ app.group("/projects", (app) =>
                   name
                 )
               )
-            `)
-            .eq("id", projectData.id)
-            .single();
+            `
+              )
+              .eq("id", projectData.id)
+              .single();
 
           if (fetchError) {
             console.error("Fetch error:", fetchError);
@@ -1183,7 +1189,8 @@ app.group("/projects", (app) =>
           return {
             success: true,
             data: completeProjectData,
-            message: "Project created successfully" +
+            message:
+              "Project created successfully" +
               (employer_assignments && employer_assignments.length > 0
                 ? ` with ${employer_assignments.length} employee(s) assigned`
                 : ""),
@@ -1208,10 +1215,14 @@ app.group("/projects", (app) =>
           size: t.Optional(t.String()),
           scope: t.Optional(t.String()),
           status: t.Optional(t.String()),
-          employer_assignments: t.Optional(t.Array(t.Object({
-            employer_id: t.String(),
-            role: t.String()
-          }))), // Nouveau champ pour les assignations avec rôles
+          employer_assignments: t.Optional(
+            t.Array(
+              t.Object({
+                employer_id: t.String(),
+                role: t.String(),
+              })
+            )
+          ), // Nouveau champ pour les assignations avec rôles
         }),
       }
     )

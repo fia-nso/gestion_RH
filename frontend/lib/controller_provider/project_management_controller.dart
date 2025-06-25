@@ -27,6 +27,20 @@ class ProjectManagementController extends ChangeNotifier {
     }
     notifyListeners();
   }
+  Future<void> loadProjectsId() async {
+    loading = true;
+    error = null;
+    notifyListeners();
+
+    try {
+      projects = (await _service.getProject(projects as String)) as List<Project>;
+      loading = false;
+    } catch (e) {
+      error = 'Failed to load projects: $e';
+      loading = false;
+    }
+    notifyListeners();
+  }
 
   Future<bool> createProject({
     required String name,
