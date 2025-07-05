@@ -3335,18 +3335,27 @@ class ProjectDetails extends StatelessWidget {
   void _showEditDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => ChangeNotifierProvider(
-        create: (_) => ProjectManagementController(),
-        child: Consumer<ProjectManagementController>(
-          builder: (context, controller, child) {
-            return EditProjectPage(
-              project: project,
-              controller: controller,
-            );
-          },
-        ),
+      builder: (context) => MultiProvider(
+        providers: [
+          // Réutiliser le contrôleur d'employés existant
+          ChangeNotifierProvider.value(
+            value: context.read<EmployeeManagementController>()
+              ..loadEmployees(),
+          ),
+          // Créer un contrôleur de formulaire avec le projet existant
+          ChangeNotifierProvider(
+            create: (_) => ProjectFormController(project),
+          ),
+        ],
+        child: const ProjectFormPage(),
       ),
-    );
+    ).then((result) {
+      // Optionnel: Gérer le résultat de l'édition
+      if (result == true) {
+        // Rafraîchir la page ou naviguer vers la liste mise à jour
+        Navigator.of(context).pop(); // Retourner à la liste des projets
+      }
+    });
   }
 }
 
@@ -3735,6 +3744,7 @@ class ProjectFormPage extends StatelessWidget {
         backgroundColor: AppColors.primary,
         elevation: 4,
         leading: IconButton(
+          color: const Color.fromARGB(255, 255, 255, 255),
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).pop(),
         ),
