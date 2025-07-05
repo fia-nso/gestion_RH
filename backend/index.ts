@@ -289,6 +289,8 @@ app
     }
   );
 
+  
+
 // Employee routes
 app.group("/employers", (app) =>
   app
@@ -940,6 +942,482 @@ app.group("/employers", (app) =>
         message: `${role} and associated user deleted successfully`,
       };
     })
+
+    // Skills Management API Endpoints
+
+// GET /skills/categories - Get all skill categories
+.get("/skills/categories", async ({ set }) => {
+  try {
+    const { data, error } = await supabase
+      .from("skill_categories")
+      .select("*")
+      .order("name");
+
+    if (error) {
+      set.status = 400;
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data };
+  } catch (err) {
+    console.error("Error fetching skill categories:", err);
+    set.status = 500;
+    return { success: false, error: "Internal server error" };
+  }
+})
+
+// GET /skills - Get all skills with categories
+.get("/skills", async ({ query, set }) => {
+  const { category_id } = query;
+  
+  try {
+    let queryBuilder = supabase
+      .from("skills")
+      .select(`
+        *,
+        skill_categories(id, name)
+      `)
+      .order("name");
+
+    if (category_id) {
+      queryBuilder = queryBuilder.eq("category_id", category_id);
+    }
+
+    const { data, error } = await queryBuilder;
+
+    if (error) {
+      set.status = 400;
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data };
+  } catch (err) {
+    console.error("Error fetching skills:", err);
+    set.status = 500;
+    return { success: false, error: "Internal server error" };
+  }
+})
+
+// POST /skills - Create new skill (Admin only)
+.post("/skills", async ({ body, headers, set }) => {
+  const { name, category_id, description } = body;
+
+  // Get current user info from Authorization header
+  const token = headers.authorization?.replace("Bearer ", "");
+  const { data: userInfo, error: userInfoError } = await supabase.auth.getUser(token);
+
+  if (userInfoError || !userInfo?.user) {
+    set.status = 401;
+    return { success: false, error: "Unauthorized" };
+  }
+
+  // Check if user is admin
+  const { data: roleData, error: roleError } = await supabase
+    .from("user_roles")
+    .select("role_id")
+    .eq("user_id", userInfo.user.id)
+    .single();
+
+  if (roleError || roleData?.role_id !== "admin") {
+    set.status = 403;
+    return { success: false, error: "Only admins can create skills" };
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("skills")
+      .insert({
+        name: name.trim(),
+        category_id,
+        description: description?.trim()
+      })
+      .select(`
+        *,
+        skill_categories(id, name)
+      `)
+      .single();
+
+    if (error) {
+      set.status = 400;
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data };
+  } catch (err) {
+    console.error("Error creating skill:", err);
+    set.status = 500;
+    return { success: false, error: "Internal server error" };
+  }
+}, {
+  body: t.Object({
+    name: t.String(),
+    category_id: t.String(),
+    description: t.Optional(t.String())
+  })
+})
+
+// PUT /skills/:id - Update skill (Admin only)
+.put("/skills/:id", async ({ params, body, headers, set }) => {
+  const { id } = params;
+  const { name, category_id, description } = body;
+
+  // Get current user info from Authorization header
+  const token = headers.authorization?.replace("Bearer ", "");
+  const { data: userInfo, error: userInfoError } = await supabase.auth.getUser(token);
+
+  if (userInfoError || !userInfo?.user) {
+    set.status = 401;
+    return { success: false, error: "Unauthorized" };
+  }
+
+  // Check if user is admin
+  const { data: roleData, error: roleError } = await supabase
+    .from("user_roles")
+    .select("role_id")
+    .eq("user_id", userInfo.user.id)
+    .single();
+
+  if (roleError || roleData?.role_id !== "admin") {
+    set.status = 403;
+    return { success: false, error: "Only admins can update skills" };
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("skills")
+      .update({
+        name: name.trim(),
+        category_id,
+        description: description?.trim()
+      })
+      .eq("id", id)
+      .select(`
+        *,
+        skill_categories(id, name)
+      `)
+      .single();
+
+    if (error) {
+      set.status = 400;
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data };
+  } catch (err) {
+    console.error("Error updating skill:", err);
+    set.status = 500;
+    return { success: false, error: "Internal server error" };
+  }
+}, {
+  body: t.Object({
+    name: t.String(),
+    category_id: t.String(),
+    description: t.Optional(t.String())
+  })
+})
+
+// DELETE /skills/:id - Delete skill (Admin only)
+.delete("/skills/:id", async ({ params, headers, set }) => {
+  const { id } = params;
+
+  // Get current user info from Authorization header
+  const token = headers.authorization?.replace("Bearer ", "");
+  const { data: userInfo, error: userInfoError } = await supabase.auth.getUser(token);
+
+  if (userInfoError || !userInfo?.user) {
+    set.status = 401;
+    return { success: false, error: "Unauthorized" };
+  }
+
+  // Check if user is admin
+  const { data: roleData, error: roleError } = await supabase
+    .from("user_roles")
+    .select("role_id")
+    .eq("user_id", userInfo.user.id)
+    .single();
+
+  if (roleError || roleData?.role_id !== "admin") {
+    set.status = 403;
+    return { success: false, error: "Only admins can delete skills" };
+  }
+
+  try {
+    const { error } = await supabase
+      .from("skills")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      set.status = 400;
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, message: "Skill deleted successfully" };
+  } catch (err) {
+    console.error("Error deleting skill:", err);
+    set.status = 500;
+    return { success: false, error: "Internal server error" };
+  }
+})
+
+// GET /employees/:id/skills - Get employee skills
+.get("/:id/skills", async ({ params, headers, set }) => {
+  const { id: employeeId } = params;
+
+  // Get current user info from Authorization header
+  const token = headers.authorization?.replace("Bearer ", "");
+  const { data: userInfo, error: userInfoError } = await supabase.auth.getUser(token);
+
+  if (userInfoError || !userInfo?.user) {
+    set.status = 401;
+    return { success: false, error: "Unauthorized" };
+  }
+
+  // Check if user is admin or accessing their own skills
+  const { data: roleData } = await supabase
+    .from("user_roles")
+    .select("role_id")
+    .eq("user_id", userInfo.user.id)
+    .single();
+
+  const isAdmin = roleData?.role_id === "admin";
+  const isSelf = userInfo.user.id === employeeId;
+
+  if (!isAdmin && !isSelf) {
+    set.status = 403;
+    return { success: false, error: "Access denied" };
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("employee_skills")
+      .select(`
+        *,
+        skills(
+          *,
+          skill_categories(id, name)
+        )
+      `)
+      .eq("employee_id", employeeId)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      set.status = 400;
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data };
+  } catch (err) {
+    console.error("Error fetching employee skills:", err);
+    set.status = 500;
+    return { success: false, error: "Internal server error" };
+  }
+})
+
+// POST /:id/skills - Add skill to employee (Admin only)
+.post("/:id/skills", async ({ params, body, headers, set }) => {
+  const { id: employeeId } = params;
+  const { 
+    skill_id, 
+    proficiency_level, 
+    years_of_experience, 
+    certification_url, 
+    certification_name, 
+    notes 
+  } = body;
+
+  // Get current user info from Authorization header
+  const token = headers.authorization?.replace("Bearer ", "");
+  const { data: userInfo, error: userInfoError } = await supabase.auth.getUser(token);
+
+  if (userInfoError || !userInfo?.user) {
+    set.status = 401;
+    return { success: false, error: "Unauthorized" };
+  }
+
+  // Check if user is admin
+  const { data: roleData, error: roleError } = await supabase
+    .from("user_roles")
+    .select("role_id")
+    .eq("user_id", userInfo.user.id)
+    .single();
+
+  if (roleError || roleData?.role_id !== "admin") {
+    set.status = 403;
+    return { success: false, error: "Only admins can add skills to employees" };
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("employee_skills")
+      .insert({
+        employee_id: employeeId,
+        skill_id,
+        proficiency_level: proficiency_level || "beginner",
+        years_of_experience: years_of_experience || 0,
+        certification_url: certification_url?.trim(),
+        certification_name: certification_name?.trim(),
+        notes: notes?.trim()
+      })
+      .select(`
+        *,
+        skills(
+          *,
+          skill_categories(id, name)
+        )
+      `)
+      .single();
+
+    if (error) {
+      set.status = 400;
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data };
+  } catch (err) {
+    console.error("Error adding employee skill:", err);
+    set.status = 500;
+    return { success: false, error: "Internal server error" };
+  }
+}, {
+  body: t.Object({
+    skill_id: t.String(),
+    proficiency_level: t.Optional(t.Union([
+      t.Literal("beginner"),
+      t.Literal("intermediate"), 
+      t.Literal("advanced"),
+      t.Literal("expert")
+    ])),
+    years_of_experience: t.Optional(t.Number()),
+    certification_url: t.Optional(t.String()),
+    certification_name: t.Optional(t.String()),
+    notes: t.Optional(t.String())
+  })
+})
+
+// PUT /:id/skills/:skillId - Update employee skill (Admin only)
+.put("/:id/skills/:skillId", async ({ params, body, headers, set }) => {
+  const { id: employeeId, skillId } = params;
+  const { 
+    proficiency_level, 
+    years_of_experience, 
+    certification_url, 
+    certification_name, 
+    notes 
+  } = body;
+
+  // Get current user info from Authorization header
+  const token = headers.authorization?.replace("Bearer ", "");
+  const { data: userInfo, error: userInfoError } = await supabase.auth.getUser(token);
+
+  if (userInfoError || !userInfo?.user) {
+    set.status = 401;
+    return { success: false, error: "Unauthorized" };
+  }
+
+  // Check if user is admin
+  const { data: roleData, error: roleError } = await supabase
+    .from("user_roles")
+    .select("role_id")
+    .eq("user_id", userInfo.user.id)
+    .single();
+
+  if (roleError || roleData?.role_id !== "admin") {
+    set.status = 403;
+    return { success: false, error: "Only admins can update employee skills" };
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("employee_skills")
+      .update({
+        proficiency_level,
+        years_of_experience,
+        certification_url: certification_url?.trim(),
+        certification_name: certification_name?.trim(),
+        notes: notes?.trim()
+      })
+      .eq("employee_id", employeeId)
+      .eq("skill_id", skillId)
+      .select(`
+        *,
+        skills(
+          *,
+          skill_categories(id, name)
+        )
+      `)
+      .single();
+
+    if (error) {
+      set.status = 400;
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data };
+  } catch (err) {
+    console.error("Error updating employee skill:", err);
+    set.status = 500;
+    return { success: false, error: "Internal server error" };
+  }
+}, {
+  body: t.Object({
+    proficiency_level: t.Optional(t.Union([
+      t.Literal("beginner"),
+      t.Literal("intermediate"), 
+      t.Literal("advanced"),
+      t.Literal("expert")
+    ])),
+    years_of_experience: t.Optional(t.Number()),
+    certification_url: t.Optional(t.String()),
+    certification_name: t.Optional(t.String()),
+    notes: t.Optional(t.String())
+  })
+})
+
+// DELETE /:id/skills/:skillId - Remove skill from employee (Admin only)
+.delete("/:id/skills/:skillId", async ({ params, headers, set }) => {
+  const { id: employeeId, skillId } = params;
+
+  // Get current user info from Authorization header
+  const token = headers.authorization?.replace("Bearer ", "");
+  const { data: userInfo, error: userInfoError } = await supabase.auth.getUser(token);
+
+  if (userInfoError || !userInfo?.user) {
+    set.status = 401;
+    return { success: false, error: "Unauthorized" };
+  }
+
+  // Check if user is admin
+  const { data: roleData, error: roleError } = await supabase
+    .from("user_roles")
+    .select("role_id")
+    .eq("user_id", userInfo.user.id)
+    .single();
+
+  if (roleError || roleData?.role_id !== "admin") {
+    set.status = 403;
+    return { success: false, error: "Only admins can remove employee skills" };
+  }
+
+  try {
+    const { error } = await supabase
+      .from("employee_skills")
+      .delete()
+      .eq("employee_id", employeeId)
+      .eq("skill_id", skillId);
+
+    if (error) {
+      set.status = 400;
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, message: "Skill removed from employee successfully" };
+  } catch (err) {
+    console.error("Error removing employee skill:", err);
+    set.status = 500;
+    return { success: false, error: "Internal server error" };
+  }
+})
 );
 
 app.group("/projects", (app) =>
@@ -1385,6 +1863,8 @@ app.group("/projects", (app) =>
       }
     })
 );
+
+
 
 app.listen(3000, () => {
   console.log("✅ Server running on http://localhost:3000");

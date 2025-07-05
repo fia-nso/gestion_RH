@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:frontend/constants/colors.dart';
 import 'package:frontend/controller_provider/update_provider.dart';
 import 'package:frontend/l10n/generated/app_localizations.dart';
 import 'package:frontend/models/auth_model.dart';
@@ -11,7 +13,9 @@ import '../controller_provider/employee_management_controller.dart';
 import '../controller_provider/leave_management_controller.dart';
 import '../controller_provider/locale_provider.dart';
 import '../controller_provider/project_management_controller.dart';
+import '../controller_provider/skill_management_controller.dart';
 import '../models/absence_model.dart';
+import '../models/employee_skill.dart';
 import '../models/leave_model.dart';
 import '../models/project_model.dart';
 import '../services/leave_service.dart';
@@ -31,6 +35,9 @@ class HomePage extends StatelessWidget {
             create: (_) => EmployerUpdateController(context)),
         // ChangeNotifierProvider(create: (_) => EmployeeManagementController()),
         ChangeNotifierProvider(create: (_) => LeaveManagementController()),
+        ChangeNotifierProvider<SkillManagementController>(
+          create: (_) => SkillManagementController(),
+        ),
       ],
       child: const _HomePageBody(),
     );
@@ -58,6 +65,25 @@ class _HomePageBodyState extends State<_HomePageBody> {
     List<GButton> navButtons = [];
 
     // Ajouter la page "Employees" en premier si l'utilisateur est admin
+    // Add Employees and Skills Management pages for admins
+    // if (userRole == 'admin') {
+    //   pages.add(const EmployeeManagementView());
+    //   pages.add(const SkillManagementView());
+    //   navButtons.add(
+    //     GButton(
+    //       icon: Icons.people,
+    //       text: AppLocalizations.of(context)!.employees,
+    //       semanticLabel: AppLocalizations.of(context)!.employees,
+    //     ),
+    //   );
+    //   navButtons.add(
+    //     GButton(
+    //       icon: Icons.build,
+    //       text: AppLocalizations.of(context)!.skills,
+    //       semanticLabel: AppLocalizations.of(context)!.skills,
+    //     ),
+    //   );
+
     if (userRole == 'admin') {
       pages.add(const EmployeeManagementView()); // Employees page second
       navButtons.add(
@@ -191,8 +217,8 @@ class _HomePageBodyState extends State<_HomePageBody> {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Theme.of(context).primaryColor,
-                          Theme.of(context).primaryColor.withOpacity(0.8),
+                          AppColors.primary,
+                          AppColors.primary.withOpacity(0.8),
                         ],
                       ),
                     ),
@@ -620,8 +646,8 @@ class _HomePageBodyState extends State<_HomePageBody> {
   Widget _buildGenericProfile(
       BuildContext context, AuthController authController, String userRole) {
     final leaveController = context.watch<LeaveManagementController>();
-    // final userName = authController.user.name;
-    // final userStatus = authController.user.status;
+    final userName = authController.user.name;
+    final userStatus = authController.user.status;
     final userId = authController.user.id;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -631,129 +657,212 @@ class _HomePageBodyState extends State<_HomePageBody> {
       }
     });
 
-    return const Center(
-        // child: SingleChildScrollView(
-        //   child: Column(
-        //     mainAxisAlignment: MainAxisAlignment.center,
-        //     children: [
-        //       CircleAvatar(
-        //         radius: 50,
-        //         backgroundColor: Colors.grey[200],
-        //         child: const Icon(Icons.person, size: 50),
-        //       ),
-        //       const SizedBox(height: 20),
-        //       Text(
-        //         '${AppLocalizations.of(context)!.bienvenue}, ${userName ?? "Utilisateur"}',
-        //         style: Theme.of(context).textTheme.titleLarge,
-        //         textAlign: TextAlign.center,
-        //       ),
-        //       const SizedBox(height: 20),
-        //       Text(
-        //         '${AppLocalizations.of(context)!.role}: ${userRole.toUpperCase()}',
-        //         style: Theme.of(context).textTheme.titleMedium,
-        //       ),
-        //       const SizedBox(height: 20),
-        //       Text(
-        //         '${AppLocalizations.of(context)!.status}: ${userStatus ?? 'N/A'}',
-        //         style: Theme.of(context).textTheme.titleMedium,
-        //       ),
-        //       const SizedBox(height: 20),
-        // Card(
-        //   child: Padding(
-        //     padding: const EdgeInsets.all(16.0),
-        //     child: Column(
-        //       crossAxisAlignment: CrossAxisAlignment.start,
-        //       children: [
-        //         Row(
-        //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        //           children: [
-        //             Text(
-        //               AppLocalizations.of(context)!.leave_balance,
-        //               style: Theme.of(context)
-        //                   .textTheme
-        //                   .titleMedium
-        //                   ?.copyWith(fontWeight: FontWeight.bold),
-        //             ),
-        //             IconButton(
-        //               onPressed: () => _showLeaveDetailsDialog(
-        //                 context,
-        //                 leaveController.getEmployeeAllocations(userId),
-        //                 userName ?? 'User',
-        //               ),
-        //               icon: const Icon(Icons.open_in_full),
-        //               tooltip: AppLocalizations.of(context)!.view_details,
-        //             ),
-        //           ],
-        //         ),
-        //         const SizedBox(height: 8),
-        //         if (leaveController.isLoading(userId))
-        //           const Center(child: CircularProgressIndicator())
-        //         else if (leaveController.getError(userId) != null)
-        //           Text(
-        //             leaveController.getError(userId)!,
-        //             style: const TextStyle(color: Colors.red),
-        //           )
-        //         else
-        //           LeaveAllocationSummary(
-        //             allocations:
-        //                 leaveController.getEmployeeAllocations(userId),
-        //             showTitle: false,
-        //           ),
-        //       ],
-        //     ),
-        //   ),
-        // ),
-        // const SizedBox(height: 20),
-        // Card(
-        //   child: Padding(
-        //     padding: const EdgeInsets.all(16.0),
-        //     child: Column(
-        //       crossAxisAlignment: CrossAxisAlignment.start,
-        //       children: [
-        //         Row(
-        //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        //           children: [
-        //             Text(
-        //               AppLocalizations.of(context)!.absence_summary,
-        //               style: Theme.of(context)
-        //                   .textTheme
-        //                   .titleMedium
-        //                   ?.copyWith(fontWeight: FontWeight.bold),
-        //             ),
-        //             IconButton(
-        //               onPressed: () => _showAbsenceDetailsDialog(
-        //                 context,
-        //                 leaveController.getEmployeeAbsences(userId),
-        //                 userName ?? 'User',
-        //               ),
-        //               icon: const Icon(Icons.open_in_full),
-        //               tooltip: AppLocalizations.of(context)!.view_details,
-        //             ),
-        //           ],
-        //         ),
-        //         const SizedBox(height: 8),
-        //         if (leaveController.isLoading(userId))
-        //           const Center(child: CircularProgressIndicator())
-        //         else if (leaveController.getError(userId) != null)
-        //           Text(
-        //             leaveController.getError(userId)!,
-        //             style: const TextStyle(color: Colors.red),
-        //           )
-        //         else
-        //           AbsenceSummary(
-        //             absences: leaveController.getEmployeeAbsences(userId),
-        //             totalAbsenceHours:
-        //                 leaveController.getTotalAbsenceHours(userId),
-        //             showTitle: false,
-        //           ),
-        //       ],
-        //     ),
-        //   ),
-        // ),
-        //     ],
-        //   ),
-        // ),
-        );
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          // Header avec photo de profil
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              children: [
+                CircleAvatar(
+                  radius: 40,
+                  backgroundColor: AppColors.primaryLight,
+                  child: Icon(Icons.person, size: 40, color: AppColors.surface),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  userName ?? "Utilisateur",
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: AppColors.surface,
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Chip(
+                  backgroundColor: AppColors.primaryDark,
+                  label: Text(
+                    userRole.toUpperCase(),
+                    style: const TextStyle(color: AppColors.surface),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // Section Statut
+          Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Icon(Icons.verified_user, color: AppColors.secondary),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          AppLocalizations.of(context)!.status,
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: AppColors.textSecondary,
+                                  ),
+                        ),
+                        Text(
+                          userStatus ?? 'N/A',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Section Congés
+          Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        AppLocalizations.of(context)!.leave_balance,
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: AppColors.primaryDark,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                      ),
+                      IconButton(
+                        onPressed: () => _showLeaveDetailsDialog(
+                          context,
+                          leaveController.getEmployeeAllocations(userId),
+                          userName ?? 'User',
+                        ),
+                        icon:
+                            Icon(Icons.info_outline, color: AppColors.primary),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  if (leaveController.isLoading(userId))
+                    const Center(child: CircularProgressIndicator())
+                  else if (leaveController.getError(userId) != null)
+                    Text(
+                      leaveController.getError(userId)!,
+                      style: const TextStyle(color: AppColors.error),
+                    )
+                  else
+                    LeaveAllocationSummary(
+                      allocations:
+                          leaveController.getEmployeeAllocations(userId),
+                      showTitle: false,
+                    ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Section Absences
+          Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        AppLocalizations.of(context)!.absence_summary,
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: AppColors.primaryDark,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                      ),
+                      IconButton(
+                        onPressed: () => _showAbsenceDetailsDialog(
+                          context,
+                          leaveController.getEmployeeAbsences(userId),
+                          userName ?? 'User',
+                        ),
+                        icon:
+                            Icon(Icons.info_outline, color: AppColors.primary),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  if (leaveController.isLoading(userId))
+                    const Center(child: CircularProgressIndicator())
+                  else if (leaveController.getError(userId) != null)
+                    Text(
+                      leaveController.getError(userId)!,
+                      style: const TextStyle(color: AppColors.error),
+                    )
+                  else
+                    AbsenceSummary(
+                      absences: leaveController.getEmployeeAbsences(userId),
+                      totalAbsenceHours:
+                          leaveController.getTotalAbsenceHours(userId),
+                      showTitle: false,
+                    ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // Bouton Déconnexion
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.logout),
+              label: Text(AppLocalizations.of(context)!.logout),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.error,
+                foregroundColor: AppColors.surface,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onPressed: () => _showLogoutDialog(context),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _showLogoutDialog(BuildContext context) async {
@@ -879,10 +988,10 @@ class _EmployeeManagementViewState extends State<EmployeeManagementView> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Theme.of(context).primaryColor,
+            color: AppColors.primary,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: const Color.fromARGB(255, 225, 26, 26).withOpacity(0.1),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               ),
@@ -929,7 +1038,7 @@ class _EmployeeManagementViewState extends State<EmployeeManagementView> {
                 child: Material(
                   borderRadius: BorderRadius.circular(8),
                   color: isSelected
-                      ? Theme.of(context).primaryColor.withOpacity(0.1)
+                      ? AppColors.primary.withOpacity(0.1)
                       : Colors.transparent,
                   child: InkWell(
                     borderRadius: BorderRadius.circular(8),
@@ -941,8 +1050,7 @@ class _EmployeeManagementViewState extends State<EmployeeManagementView> {
                         children: [
                           CircleAvatar(
                             radius: 20,
-                            backgroundColor:
-                                Theme.of(context).primaryColor.withOpacity(0.1),
+                            backgroundColor: AppColors.primary.withOpacity(0.1),
                             backgroundImage: employee.photo != null
                                 ? NetworkImage(employee.photo!)
                                 : null,
@@ -953,7 +1061,7 @@ class _EmployeeManagementViewState extends State<EmployeeManagementView> {
                                             .toUpperCase() ??
                                         'E',
                                     style: TextStyle(
-                                      color: Theme.of(context).primaryColor,
+                                      color: AppColors.primary,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   )
@@ -969,7 +1077,7 @@ class _EmployeeManagementViewState extends State<EmployeeManagementView> {
                                   style: TextStyle(
                                     fontWeight: FontWeight.w600,
                                     color: isSelected
-                                        ? Theme.of(context).primaryColor
+                                        ? AppColors.primary
                                         : Colors.black87,
                                   ),
                                 ),
@@ -1112,17 +1220,14 @@ class _EmployeeManagementViewState extends State<EmployeeManagementView> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            Theme.of(context).primaryColor,
-            Theme.of(context).primaryColorDark
-          ],
+          colors: [AppColors.primary, AppColors.primaryDark],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).primaryColor.withOpacity(0.3),
+            color: AppColors.primary.withOpacity(0.3),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -2089,18 +2194,15 @@ class EmployeeDetails extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         margin: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Theme.of(context).primaryColor,
-              Theme.of(context).primaryColorDark
-            ],
+          gradient: const LinearGradient(
+            colors: [AppColors.primary, AppColors.primaryDark],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(8),
           boxShadow: [
             BoxShadow(
-              color: Theme.of(context).primaryColor.withOpacity(0.3),
+              color: AppColors.primary.withOpacity(0.3),
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),
@@ -2125,18 +2227,18 @@ class EmployeeDetails extends StatelessWidget {
                 children: [
                   Text(
                     employee.name ?? appLocalizations.no_name,
-                    style: Theme.of(context).textTheme.bodyMedium,
+                    style: Theme.of(context).primaryTextTheme.bodyMedium,
                   ),
                   const SizedBox(height: 4),
                   Text(
                     appLocalizations.schedule,
-                    style: Theme.of(context).textTheme.bodyMedium,
+                    style: Theme.of(context).primaryTextTheme.bodyMedium,
                   ),
                   if (employee.startDate != null) ...[
                     const SizedBox(height: 2),
                     Text(
                       '${appLocalizations.start_date_label}: ${_formatDate(employee.startDate!)}',
-                      style: Theme.of(context).textTheme.bodyMedium,
+                      style: Theme.of(context).primaryTextTheme.bodyMedium,
                     ),
                   ],
                 ],
@@ -2579,16 +2681,15 @@ class _ProjectManagementViewState extends State<ProjectManagementView> {
       ProjectManagementController controller) {
     showDialog(
       context: context,
-      builder: (context) => MultiProvider(
-        providers: [
-          ChangeNotifierProvider.value(
-              value: context.read<EmployeeManagementController>()
-                ..loadEmployees()),
-          ChangeNotifierProvider(create: (_) => ProjectFormController(project)),
-        ],
-        child: EditProjectPage(
-          project: project,
-          controller: controller,
+      builder: (context) => ChangeNotifierProvider(
+        create: (_) => ProjectManagementController(),
+        child: Consumer<ProjectManagementController>(
+          builder: (context, controller, child) {
+            return EditProjectPage(
+              project: project,
+              controller: controller,
+            );
+          },
         ),
       ),
     );
@@ -3382,13 +3483,14 @@ class _EditProjectPageState extends State<EditProjectPage> {
           appLocalizations.edit_project,
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
-            color: theme.colorScheme.onPrimary,
+            color: const Color.fromARGB(255, 250, 252, 255),
           ),
         ),
-        backgroundColor: theme.colorScheme.primary,
+        backgroundColor: AppColors.primary,
         elevation: 4,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
+          color: const Color.fromARGB(255, 250, 252, 255),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
@@ -3412,14 +3514,13 @@ class _EditProjectPageState extends State<EditProjectPage> {
                       controller: _nameController,
                       decoration: InputDecoration(
                         labelText: appLocalizations.project_name,
-                        labelStyle: TextStyle(color: theme.colorScheme.primary),
+                        labelStyle: TextStyle(color: AppColors.primary),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                         filled: true,
                         fillColor: theme.colorScheme.surface.withOpacity(0.1),
-                        prefixIcon:
-                            Icon(Icons.title, color: theme.colorScheme.primary),
+                        prefixIcon: Icon(Icons.title, color: AppColors.primary),
                       ),
                       validator: (value) => value!.trim().isEmpty
                           ? appLocalizations.name_required
@@ -3431,14 +3532,14 @@ class _EditProjectPageState extends State<EditProjectPage> {
                       controller: _descriptionController,
                       decoration: InputDecoration(
                         labelText: appLocalizations.description,
-                        labelStyle: TextStyle(color: theme.colorScheme.primary),
+                        labelStyle: TextStyle(color: AppColors.primary),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                         filled: true,
                         fillColor: theme.colorScheme.surface.withOpacity(0.1),
-                        prefixIcon: Icon(Icons.description,
-                            color: theme.colorScheme.primary),
+                        prefixIcon:
+                            Icon(Icons.description, color: AppColors.primary),
                       ),
                       maxLines: 4,
                       validator: (value) => value!.trim().isEmpty
@@ -3451,14 +3552,13 @@ class _EditProjectPageState extends State<EditProjectPage> {
                       controller: _sizeController,
                       decoration: InputDecoration(
                         labelText: appLocalizations.project_size,
-                        labelStyle: TextStyle(color: theme.colorScheme.primary),
+                        labelStyle: TextStyle(color: AppColors.primary),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                         filled: true,
                         fillColor: theme.colorScheme.surface.withOpacity(0.1),
-                        prefixIcon:
-                            Icon(Icons.scale, color: theme.colorScheme.primary),
+                        prefixIcon: Icon(Icons.scale, color: AppColors.primary),
                       ),
                       validator: (value) => value!.trim().isEmpty
                           ? appLocalizations.project_size
@@ -3470,14 +3570,13 @@ class _EditProjectPageState extends State<EditProjectPage> {
                       controller: _scopeController,
                       decoration: InputDecoration(
                         labelText: appLocalizations.project_scope,
-                        labelStyle: TextStyle(color: theme.colorScheme.primary),
+                        labelStyle: TextStyle(color: AppColors.primary),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                         filled: true,
                         fillColor: theme.colorScheme.surface.withOpacity(0.1),
-                        prefixIcon:
-                            Icon(Icons.score, color: theme.colorScheme.primary),
+                        prefixIcon: Icon(Icons.score, color: AppColors.primary),
                       ),
                       validator: (value) => value!.trim().isEmpty
                           ? appLocalizations.project_scope
@@ -3490,15 +3589,14 @@ class _EditProjectPageState extends State<EditProjectPage> {
                       child: InputDecorator(
                         decoration: InputDecoration(
                           labelText: appLocalizations.start_date,
-                          labelStyle:
-                              TextStyle(color: theme.colorScheme.primary),
+                          labelStyle: TextStyle(color: AppColors.primary),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
                           filled: true,
                           fillColor: theme.colorScheme.surface.withOpacity(0.1),
                           suffixIcon: Icon(Icons.calendar_today,
-                              color: theme.colorScheme.primary),
+                              color: AppColors.primary),
                         ),
                         child: Text(
                           _startDate != null
@@ -3515,15 +3613,14 @@ class _EditProjectPageState extends State<EditProjectPage> {
                       child: InputDecorator(
                         decoration: InputDecoration(
                           labelText: appLocalizations.end_date_label,
-                          labelStyle:
-                              TextStyle(color: theme.colorScheme.primary),
+                          labelStyle: TextStyle(color: AppColors.primary),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
                           filled: true,
                           fillColor: theme.colorScheme.surface.withOpacity(0.1),
                           suffixIcon: Icon(Icons.calendar_today,
-                              color: theme.colorScheme.primary),
+                              color: AppColors.primary),
                         ),
                         child: Text(
                           _endDate != null
@@ -3539,14 +3636,14 @@ class _EditProjectPageState extends State<EditProjectPage> {
                       value: _status,
                       decoration: InputDecoration(
                         labelText: appLocalizations.status,
-                        labelStyle: TextStyle(color: theme.colorScheme.primary),
+                        labelStyle: TextStyle(color: AppColors.primary),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                         filled: true,
                         fillColor: theme.colorScheme.surface.withOpacity(0.1),
-                        prefixIcon: Icon(Icons.stairs,
-                            color: theme.colorScheme.primary),
+                        prefixIcon:
+                            Icon(Icons.stairs, color: AppColors.primary),
                       ),
                       items: ProjectStatus.values
                           .map((status) => DropdownMenuItem(
@@ -3571,7 +3668,7 @@ class _EditProjectPageState extends State<EditProjectPage> {
                         OutlinedButton(
                           onPressed: () => Navigator.of(context).pop(),
                           style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: theme.colorScheme.primary),
+                            side: BorderSide(color: AppColors.primary),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
@@ -3580,7 +3677,7 @@ class _EditProjectPageState extends State<EditProjectPage> {
                           ),
                           child: Text(
                             appLocalizations.cancel,
-                            style: TextStyle(color: theme.colorScheme.primary),
+                            style: TextStyle(color: AppColors.primary),
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -3588,7 +3685,7 @@ class _EditProjectPageState extends State<EditProjectPage> {
                           onPressed: () =>
                               _saveProject(context, formController, _formKey),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: theme.colorScheme.primary,
+                            backgroundColor: AppColors.primary,
                             foregroundColor: theme.colorScheme.onPrimary,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
@@ -3635,7 +3732,7 @@ class ProjectFormPage extends StatelessWidget {
             color: theme.colorScheme.onPrimary,
           ),
         ),
-        backgroundColor: theme.colorScheme.primary,
+        backgroundColor: AppColors.primary,
         elevation: 4,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -3662,14 +3759,13 @@ class ProjectFormPage extends StatelessWidget {
                       controller: formController.nameController,
                       decoration: InputDecoration(
                         labelText: appLocalizations.project_name,
-                        labelStyle: TextStyle(color: theme.colorScheme.primary),
+                        labelStyle: TextStyle(color: AppColors.primary),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                         filled: true,
                         fillColor: theme.colorScheme.surface.withOpacity(0.1),
-                        prefixIcon:
-                            Icon(Icons.title, color: theme.colorScheme.primary),
+                        prefixIcon: Icon(Icons.title, color: AppColors.primary),
                       ),
                       validator: (value) => value!.trim().isEmpty
                           ? appLocalizations.name_required
@@ -3681,14 +3777,14 @@ class ProjectFormPage extends StatelessWidget {
                       controller: formController.descriptionController,
                       decoration: InputDecoration(
                         labelText: appLocalizations.description,
-                        labelStyle: TextStyle(color: theme.colorScheme.primary),
+                        labelStyle: TextStyle(color: AppColors.primary),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                         filled: true,
                         fillColor: theme.colorScheme.surface.withOpacity(0.1),
-                        prefixIcon: Icon(Icons.description,
-                            color: theme.colorScheme.primary),
+                        prefixIcon:
+                            Icon(Icons.description, color: AppColors.primary),
                       ),
                       maxLines: 4,
                       validator: (value) => value!.trim().isEmpty
@@ -3701,14 +3797,13 @@ class ProjectFormPage extends StatelessWidget {
                       controller: formController.sizeController,
                       decoration: InputDecoration(
                         labelText: appLocalizations.project_size,
-                        labelStyle: TextStyle(color: theme.colorScheme.primary),
+                        labelStyle: TextStyle(color: AppColors.primary),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                         filled: true,
                         fillColor: theme.colorScheme.surface.withOpacity(0.1),
-                        prefixIcon:
-                            Icon(Icons.scale, color: theme.colorScheme.primary),
+                        prefixIcon: Icon(Icons.scale, color: AppColors.primary),
                       ),
                       validator: (value) => value!.trim().isEmpty
                           ? appLocalizations.project_size
@@ -3720,14 +3815,13 @@ class ProjectFormPage extends StatelessWidget {
                       controller: formController.scopeController,
                       decoration: InputDecoration(
                         labelText: appLocalizations.project_scope,
-                        labelStyle: TextStyle(color: theme.colorScheme.primary),
+                        labelStyle: TextStyle(color: AppColors.primary),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                         filled: true,
                         fillColor: theme.colorScheme.surface.withOpacity(0.1),
-                        prefixIcon:
-                            Icon(Icons.score, color: theme.colorScheme.primary),
+                        prefixIcon: Icon(Icons.score, color: AppColors.primary),
                       ),
                       validator: (value) => value!.trim().isEmpty
                           ? appLocalizations.project_scope
@@ -3740,15 +3834,14 @@ class ProjectFormPage extends StatelessWidget {
                       child: InputDecorator(
                         decoration: InputDecoration(
                           labelText: appLocalizations.start_date,
-                          labelStyle:
-                              TextStyle(color: theme.colorScheme.primary),
+                          labelStyle: TextStyle(color: AppColors.primary),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
                           filled: true,
                           fillColor: theme.colorScheme.surface.withOpacity(0.1),
                           suffixIcon: Icon(Icons.calendar_today,
-                              color: theme.colorScheme.primary),
+                              color: AppColors.primary),
                         ),
                         child: Text(
                           DateFormat.yMMMd().format(formController.startDate),
@@ -3763,15 +3856,14 @@ class ProjectFormPage extends StatelessWidget {
                       child: InputDecorator(
                         decoration: InputDecoration(
                           labelText: appLocalizations.end_date_label,
-                          labelStyle:
-                              TextStyle(color: theme.colorScheme.primary),
+                          labelStyle: TextStyle(color: AppColors.primary),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
                           filled: true,
                           fillColor: theme.colorScheme.surface.withOpacity(0.1),
                           suffixIcon: Icon(Icons.calendar_today,
-                              color: theme.colorScheme.primary),
+                              color: AppColors.primary),
                         ),
                         child: Text(
                           formController.endDate == null
@@ -3788,14 +3880,14 @@ class ProjectFormPage extends StatelessWidget {
                       value: formController.status,
                       decoration: InputDecoration(
                         labelText: appLocalizations.status,
-                        labelStyle: TextStyle(color: theme.colorScheme.primary),
+                        labelStyle: TextStyle(color: AppColors.primary),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                         filled: true,
                         fillColor: theme.colorScheme.surface.withOpacity(0.1),
-                        prefixIcon: Icon(Icons.stairs,
-                            color: theme.colorScheme.primary),
+                        prefixIcon:
+                            Icon(Icons.stairs, color: AppColors.primary),
                       ),
                       items: ProjectStatus.values
                           .map((status) => DropdownMenuItem(
@@ -3820,7 +3912,7 @@ class ProjectFormPage extends StatelessWidget {
                         OutlinedButton(
                           onPressed: () => Navigator.of(context).pop(),
                           style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: theme.colorScheme.primary),
+                            side: BorderSide(color: AppColors.primary),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
@@ -3829,7 +3921,7 @@ class ProjectFormPage extends StatelessWidget {
                           ),
                           child: Text(
                             appLocalizations.cancel,
-                            style: TextStyle(color: theme.colorScheme.primary),
+                            style: TextStyle(color: AppColors.primary),
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -3837,7 +3929,7 @@ class ProjectFormPage extends StatelessWidget {
                           onPressed: () =>
                               _saveProject(context, formController, _formKey),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: theme.colorScheme.primary,
+                            backgroundColor: AppColors.primary,
                             foregroundColor: theme.colorScheme.onPrimary,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
@@ -4006,7 +4098,7 @@ void _showEmployerSelectionDialog(
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: Text(appLocalizations.cancel,
-                style: TextStyle(color: theme.colorScheme.primary)),
+                style: TextStyle(color: AppColors.primary)),
           ),
         ],
       );
@@ -4028,7 +4120,7 @@ Widget _buildEmployerAssignmentSection(
         appLocalizations.assigned_employers,
         style: theme.textTheme.titleMedium?.copyWith(
           fontWeight: FontWeight.bold,
-          color: theme.colorScheme.primary,
+          color: AppColors.primary,
         ),
       ),
       const SizedBox(height: 12),
@@ -4053,7 +4145,7 @@ Widget _buildEmployerAssignmentSection(
               onDeleted: () =>
                   formController.removeAssignment(assignment['employer_id']!),
               backgroundColor: assignment['role'] == 'People Manager'
-                  ? theme.colorScheme.primary.withOpacity(0.1)
+                  ? AppColors.primary.withOpacity(0.1)
                   : theme.colorScheme.surface,
               elevation: 2,
               shape: RoundedRectangleBorder(
@@ -4156,5 +4248,397 @@ class ProjectFormController extends ChangeNotifier {
     _sizeController.dispose();
     _scopeController.dispose();
     super.dispose();
+  }
+}
+
+// skill_details_dialog.dart
+class SkillDetailsDialog extends StatelessWidget {
+  final EmployeeSkill skill;
+
+  const SkillDetailsDialog({
+    required this.skill,
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(skill.skill?.name ?? 'Détails de la compétence'),
+      content: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildDetailRow('Catégorie', skill.skill?.category?.name ?? 'N/A'),
+            _buildDetailRow('Niveau', skill.proficiencyLevel.displayName),
+            _buildDetailRow('Expérience',
+                '${skill.yearsOfExperience} an${skill.yearsOfExperience > 1 ? 's' : ''}'),
+            if (skill.certificationName != null)
+              _buildDetailRow('Certification', skill.certificationName!),
+            if (skill.certificationUrl != null)
+              _buildDetailRow('URL Certification', skill.certificationUrl!,
+                  isUrl: true),
+            if (skill.notes != null && skill.notes!.isNotEmpty)
+              _buildDetailRow('Notes', skill.notes!),
+            if (skill.skill?.description != null &&
+                skill.skill!.description!.isNotEmpty)
+              _buildDetailRow('Description', skill.skill!.description!),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text('Fermer'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value, {bool isUrl = false}) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+              color: Colors.grey[700],
+            ),
+          ),
+          SizedBox(height: 4),
+          isUrl
+              ? InkWell(
+                  onTap: () {
+                    // Note: Requires url_launcher package to open URL
+                    // Add url_launcher to pubspec.yaml and implement URL launching logic
+                  },
+                  child: Text(
+                    value,
+                    style: TextStyle(
+                      color: Colors.blue,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                )
+              : Text(
+                  value,
+                  style: TextStyle(fontSize: 14),
+                ),
+        ],
+      ),
+    );
+  }
+}
+
+// add_edit_skill_dialog.dart
+class AddEditSkillDialog extends StatefulWidget {
+  final SkillManagementController controller;
+  final String employeeId;
+  final EmployeeSkill? skill;
+
+  const AddEditSkillDialog({
+    required this.controller,
+    required this.employeeId,
+    this.skill,
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  _AddEditSkillDialogState createState() => _AddEditSkillDialogState();
+}
+
+class _AddEditSkillDialogState extends State<AddEditSkillDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _yearsController = TextEditingController();
+  final _certificationUrlController = TextEditingController();
+  final _certificationNameController = TextEditingController();
+  final _notesController = TextEditingController();
+
+  String? selectedSkillId;
+  ProficiencyLevel selectedProficiency = ProficiencyLevel.beginner;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.skill != null) {
+      selectedSkillId = widget.skill!.skillId;
+      selectedProficiency = widget.skill!.proficiencyLevel;
+      _yearsController.text = widget.skill!.yearsOfExperience.toString();
+      _certificationUrlController.text = widget.skill!.certificationUrl ?? '';
+      _certificationNameController.text = widget.skill!.certificationName ?? '';
+      _notesController.text = widget.skill!.notes ?? '';
+    }
+  }
+
+  @override
+  void dispose() {
+    _yearsController.dispose();
+    _certificationUrlController.dispose();
+    _certificationNameController.dispose();
+    _notesController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.skill == null
+          ? 'Ajouter une compétence'
+          : 'Modifier la compétence'),
+      content: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildSkillDropdown(),
+              SizedBox(height: 16),
+              _buildProficiencyDropdown(),
+              SizedBox(height: 16),
+              _buildYearsField(),
+              SizedBox(height: 16),
+              _buildCertificationNameField(),
+              SizedBox(height: 16),
+              _buildCertificationUrlField(),
+              SizedBox(height: 16),
+              _buildNotesField(),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isLoading ? null : () => Navigator.pop(context),
+          child: Text('Annuler'),
+        ),
+        ElevatedButton(
+          onPressed: _isLoading ? null : _saveSkill,
+          child: _isLoading
+              ? SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Text('Sauvegarder'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSkillDropdown() {
+    return DropdownButtonFormField<String>(
+      value: selectedSkillId,
+      decoration: InputDecoration(
+        labelText: 'Compétence',
+        border: OutlineInputBorder(),
+        prefixIcon: Icon(Icons.code),
+      ),
+      hint: Text('Sélectionner une compétence'),
+      items: widget.controller.skills
+          .map((skill) => DropdownMenuItem(
+                value: skill.id,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(skill.name),
+                    if (skill.category != null)
+                      Text(
+                        skill.category!.name,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                  ],
+                ),
+              ))
+          .toList(),
+      onChanged: (value) => setState(() => selectedSkillId = value),
+      validator: (value) =>
+          value == null ? 'Veuillez sélectionner une compétence' : null,
+    );
+  }
+
+  Widget _buildProficiencyDropdown() {
+    return DropdownButtonFormField<ProficiencyLevel>(
+      value: selectedProficiency,
+      decoration: InputDecoration(
+        labelText: 'Niveau de maîtrise',
+        border: OutlineInputBorder(),
+        prefixIcon: Icon(Icons.star),
+      ),
+      items: ProficiencyLevel.values
+          .map((level) => DropdownMenuItem(
+                value: level,
+                child: Row(
+                  children: [
+                    Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: _getProficiencyColor(level),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Text(level.displayName),
+                  ],
+                ),
+              ))
+          .toList(),
+      onChanged: (value) => setState(() => selectedProficiency = value!),
+    );
+  }
+
+  Widget _buildYearsField() {
+    return TextFormField(
+      controller: _yearsController,
+      decoration: InputDecoration(
+        labelText: 'Années d\'expérience',
+        border: OutlineInputBorder(),
+        prefixIcon: Icon(Icons.access_time),
+      ),
+      keyboardType: TextInputType.number,
+      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Veuillez entrer les années d\'expérience';
+        }
+        final years = int.tryParse(value);
+        if (years == null || years < 0 || years > 50) {
+          return 'Veuillez entrer un nombre valide (0-50)';
+        }
+        return null;
+      },
+    );
+  }
+
+  Widget _buildCertificationNameField() {
+    return TextFormField(
+      controller: _certificationNameController,
+      decoration: InputDecoration(
+        labelText: 'Nom de la certification (optionnel)',
+        border: OutlineInputBorder(),
+        prefixIcon: Icon(Icons.verified),
+      ),
+      maxLength: 100,
+    );
+  }
+
+  Widget _buildCertificationUrlField() {
+    return TextFormField(
+      controller: _certificationUrlController,
+      decoration: InputDecoration(
+        labelText: 'URL de la certification (optionnel)',
+        border: OutlineInputBorder(),
+        prefixIcon: Icon(Icons.link),
+      ),
+      validator: (value) {
+        if (value != null && value.isNotEmpty) {
+          final uri = Uri.tryParse(value);
+          if (uri == null || !uri.hasScheme) {
+            return 'Veuillez entrer une URL valide';
+          }
+        }
+        return null;
+      },
+    );
+  }
+
+  Widget _buildNotesField() {
+    return TextFormField(
+      controller: _notesController,
+      decoration: InputDecoration(
+        labelText: 'Notes (optionnel)',
+        border: OutlineInputBorder(),
+        prefixIcon: Icon(Icons.note),
+      ),
+      maxLines: 3,
+      maxLength: 500,
+    );
+  }
+
+  Color _getProficiencyColor(ProficiencyLevel level) {
+    switch (level) {
+      case ProficiencyLevel.beginner:
+        return Colors.orange;
+      case ProficiencyLevel.intermediate:
+        return Colors.blue;
+      case ProficiencyLevel.advanced:
+        return Colors.purple;
+      case ProficiencyLevel.expert:
+        return Colors.green;
+    }
+  }
+
+  Future<void> _saveSkill() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final years = int.parse(_yearsController.text);
+      final certificationUrl = _certificationUrlController.text.trim();
+      final certificationName = _certificationNameController.text.trim();
+      final notes = _notesController.text.trim();
+
+      final success = widget.skill == null
+          ? await widget.controller.addEmployeeSkill(
+              employeeId: widget.employeeId,
+              skillId: selectedSkillId!,
+              proficiencyLevel: selectedProficiency,
+              yearsOfExperience: years,
+              certificationUrl:
+                  certificationUrl.isEmpty ? null : certificationUrl,
+              certificationName:
+                  certificationName.isEmpty ? null : certificationName,
+              notes: notes.isEmpty ? null : notes,
+            )
+          : await widget.controller.updateEmployeeSkill(
+              employeeId: widget.employeeId,
+              skillId: widget.skill!.skillId,
+              proficiencyLevel: selectedProficiency,
+              yearsOfExperience: years,
+              certificationUrl:
+                  certificationUrl.isEmpty ? null : certificationUrl,
+              certificationName:
+                  certificationName.isEmpty ? null : certificationName,
+              notes: notes.isEmpty ? null : notes,
+            );
+
+      if (success) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Compétence ${widget.skill == null ? 'ajoutée' : 'modifiée'} avec succès'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur lors de la sauvegarde'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 }

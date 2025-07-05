@@ -33,7 +33,7 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   final EmployerService _authService = EmployerService();
-  
+
   bool _passwordVisible = false;
   bool _isLoading = false;
   String? _error;
@@ -80,7 +80,8 @@ class _LoginPageState extends State<LoginPage> {
 
       if (user == null) {
         setState(() {
-          _error = 'Impossible de récupérer les informations de l\'utilisateur.';
+          _error =
+              'Impossible de récupérer les informations de l\'utilisateur.';
         });
         return;
       }
@@ -89,7 +90,8 @@ class _LoginPageState extends State<LoginPage> {
     } catch (e) {
       setState(() {
         if (e.toString().contains('Email not confirmed')) {
-          _error = 'Veuillez confirmer votre adresse e-mail pour vous connecter.';
+          _error =
+              'Veuillez confirmer votre adresse e-mail pour vous connecter.';
         } else if (e.toString().contains('Invalid login credentials')) {
           _error = 'E-mail ou mot de passe incorrect.';
         } else {
@@ -118,7 +120,8 @@ class _LoginPageState extends State<LoginPage> {
                 color: AppColors.primary,
               ),
               onPressed: () {
-                final provider = Provider.of<LocaleProvider>(context, listen: false);
+                final provider =
+                    Provider.of<LocaleProvider>(context, listen: false);
                 final currentLocale = provider.locale;
                 final newLocale = currentLocale.languageCode == 'en'
                     ? const Locale('ar')
@@ -158,9 +161,9 @@ class _LoginPageState extends State<LoginPage> {
                       color: Colors.white,
                     ),
                   ),
-                  
+
                   const SizedBox(height: 40),
-                  
+
                   // Titre
                   Text(
                     'Bienvenue',
@@ -170,9 +173,9 @@ class _LoginPageState extends State<LoginPage> {
                       color: AppColors.textPrimary,
                     ),
                   ),
-                  
+
                   const SizedBox(height: 8),
-                  
+
                   Text(
                     'Connectez-vous à votre compte',
                     style: TextStyle(
@@ -180,9 +183,9 @@ class _LoginPageState extends State<LoginPage> {
                       color: AppColors.textSecondary,
                     ),
                   ),
-                  
+
                   const SizedBox(height: 40),
-                  
+
                   // Champ Email
                   TextFormField(
                     controller: _emailController,
@@ -203,19 +206,23 @@ class _LoginPageState extends State<LoginPage> {
                       filled: true,
                       fillColor: AppColors.surface,
                       enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
+                        borderSide:
+                            BorderSide(color: Colors.grey.shade300, width: 1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: AppColors.primary, width: 2),
+                        borderSide:
+                            BorderSide(color: AppColors.primary, width: 2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       errorBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: AppColors.error, width: 1),
+                        borderSide:
+                            BorderSide(color: AppColors.error, width: 1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       focusedErrorBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: AppColors.error, width: 2),
+                        borderSide:
+                            BorderSide(color: AppColors.error, width: 2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       floatingLabelStyle: TextStyle(
@@ -227,15 +234,16 @@ class _LoginPageState extends State<LoginPage> {
                       if (value == null || value.isEmpty) {
                         return 'Veuillez entrer votre email';
                       }
-                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                          .hasMatch(value)) {
                         return 'Veuillez entrer un email valide';
                       }
                       return null;
                     },
                   ),
-                  
+
                   const SizedBox(height: 20),
-                  
+
                   // Champ Mot de passe
                   TextFormField(
                     controller: _passwordController,
@@ -255,7 +263,9 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _passwordVisible ? Icons.visibility : Icons.visibility_off,
+                          _passwordVisible
+                              ? Icons.visibility
+                              : Icons.visibility_off,
                           color: AppColors.primary,
                         ),
                         onPressed: () {
@@ -267,19 +277,23 @@ class _LoginPageState extends State<LoginPage> {
                       filled: true,
                       fillColor: AppColors.surface,
                       enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
+                        borderSide:
+                            BorderSide(color: Colors.grey.shade300, width: 1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: AppColors.primary, width: 2),
+                        borderSide:
+                            BorderSide(color: AppColors.primary, width: 2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       errorBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: AppColors.error, width: 1),
+                        borderSide:
+                            BorderSide(color: AppColors.error, width: 1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       focusedErrorBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: AppColors.error, width: 2),
+                        borderSide:
+                            BorderSide(color: AppColors.error, width: 2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       floatingLabelStyle: TextStyle(
@@ -297,9 +311,9 @@ class _LoginPageState extends State<LoginPage> {
                       return null;
                     },
                   ),
-                  
+
                   const SizedBox(height: 30),
-                  
+
                   // Bouton de connexion
                   SizedBox(
                     width: double.infinity,
@@ -320,7 +334,8 @@ class _LoginPageState extends State<LoginPage> {
                               width: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
                               ),
                             )
                           : Text(
@@ -332,7 +347,7 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                     ),
                   ),
-                  
+
                   // Message d'erreur
                   if (_error != null) ...[
                     const SizedBox(height: 20),
