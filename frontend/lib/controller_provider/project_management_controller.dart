@@ -3,9 +3,12 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:frontend/models/project_model.dart';
 import 'package:frontend/services/project_service.dart';
+import 'package:frontend/uttils/api_fetcher.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ProjectManagementController extends ChangeNotifier {
   final ProjectService _service = ProjectService();
+  final SupabaseClient client = Supabase.instance.client;
   List<Project> projects = [];
   bool loading = false;
   String? error;
@@ -143,7 +146,30 @@ class ProjectManagementController extends ChangeNotifier {
       return false;
     }
   }
+  Future<void> deleteProject(String id) async {
+    loading = true;
+    error = null;
+    notifyListeners();
 
+    try {
+      final success = await _service.deleteProjectData('project', id);
+      if (success) {
+        await loadProjects(); // Charge la liste mise à jour des projets
+      } else {
+        throw Exception('Échec de la suppression du projet');
+      }
+    } catch (e) {
+      error = 'Échec de la suppression du projet : $e';
+      loading = false;
+      notifyListeners();
+      rethrow; // Optionnel: si vous voulez que l'erreur remonte
+    } finally {
+      if (!loading) {
+        loading = false;
+        notifyListeners();
+      }
+    }
+  }
   bool _validateInputs(
       String name, String description, String size, String scope) {
     return name.trim().isNotEmpty &&

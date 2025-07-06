@@ -174,4 +174,45 @@ class ProjectService {
       return null;
     }
   }
+
+  Future<bool> deleteProjectData(String projectId, String id) async {
+    try {
+      // Vérifier si l'utilisateur actuel est admin
+      final currentUser = client.auth.currentUser!;
+      final roleResponse = await client
+          .from('user_roles')
+          .select('app_role(id)')
+          .eq('user_id', currentUser.id)
+          .single();
+          
+      if (roleResponse['app_role']['id'] != 'admin') {
+        print('Non autorisé : Seuls les admins peuvent supprimer des projets');
+        return false;
+      }
+
+      // Initialiser ApiFetcher avec le token d'accès
+      final apiFetcher = ApiFetcher(
+        accessToken: client.auth.currentSession?.accessToken,
+      );
+
+      // Appeler le endpoint DELETE
+      final response = await apiFetcher.delete('projects/$projectId');
+
+      if (!response.isSuccess) {
+        print(
+            'Échec de la suppression du projet: ${response.error} (Status: ${response.status})');
+        return false;
+      }
+
+      
+        
+      
+
+      print('Projet supprimé avec succès. ID: $projectId');
+      return true;
+    } catch (e) {
+      print('deleteProjectData() a échoué: $e');
+      return false;
+    }
+  }
 }

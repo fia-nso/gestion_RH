@@ -1060,7 +1060,7 @@ class _EmployeeManagementViewState extends State<EmployeeManagementView> {
                                             ?.substring(0, 1)
                                             .toUpperCase() ??
                                         'E',
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       color: AppColors.primary,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -2446,6 +2446,10 @@ class _ProjectManagementViewState extends State<ProjectManagementView> {
                                     ? () => _showEditProjectDialog(
                                         context, project, controller)
                                     : null,
+                                onDelete: userRole == 'admin'
+                                    ? () => _showDeleteProjectDialog(
+                                        context, project)
+                                    : null,
                               );
                             },
                           )),
@@ -2695,6 +2699,32 @@ class _ProjectManagementViewState extends State<ProjectManagementView> {
     );
   }
 
+  void _showDeleteProjectDialog(BuildContext context, Project project) {
+    final appLocalizations = AppLocalizations.of(context)!;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('delete_project'),
+        content: Text('${'confirm_delete_project'} ${project.name}'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(appLocalizations.cancel),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              await context
+                  .read<ProjectManagementController>()
+                  .deleteProject(project.id);
+            },
+            child: Text(appLocalizations.delete),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showProjectDialog(BuildContext context, [Project? project]) {
     showDialog(
       context: context,
@@ -2714,14 +2744,15 @@ class _ProjectManagementViewState extends State<ProjectManagementView> {
 // Enhanced ProjectCard with better visual design
 class ProjectCard extends StatelessWidget {
   final Project project;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   const ProjectCard({
-    super.key,
     required this.project,
-    required this.onTap,
+    this.onTap,
     this.onEdit,
+    this.onDelete,
   });
 
   @override
@@ -2755,14 +2786,25 @@ class ProjectCard extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       _buildStatusChip(project.status, context),
-                      if (onEdit != null) ...[
-                        const SizedBox(width: 8),
-                        IconButton(
-                          icon: const Icon(Icons.edit, size: 20),
-                          onPressed: onEdit,
-                          tooltip: AppLocalizations.of(context)!.edit,
+                      if (onEdit != null || onDelete != null)
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            if (onEdit != null)
+                              IconButton(
+                                icon: Icon(Icons.edit),
+                                onPressed: onEdit,
+                                tooltip: 'Modifier',
+                              ),
+                            if (onDelete != null)
+                              IconButton(
+                                icon: Icon(Icons.delete),
+                                onPressed: onDelete,
+                                tooltip: 'Supprimer',
+                                color: Colors.red,
+                              ),
+                          ],
                         ),
-                      ],
                     ],
                   ),
                 ],
